@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Http\Controllers\RfqSubmissionController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -7,6 +10,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 Route::get('/', fn (): View => view('home'))->name('home');
+
+Route::post('/rfq', RfqSubmissionController::class)
+    ->middleware('throttle:5,1')
+    ->name('rfq.store');
 
 Route::get('/health', function (): JsonResponse {
     return response()->json([
