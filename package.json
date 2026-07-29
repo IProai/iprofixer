@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "format": "prettier --check resources",
+    "format:write": "prettier --write resources"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "axios": "^1.8.0",
+    "laravel-vite-plugin": "^1.2.0",
+    "prettier": "^3.5.0",
+    "tailwindcss": "^4.1.0",
+    "vite": "^6.2.0"
+  }
+}

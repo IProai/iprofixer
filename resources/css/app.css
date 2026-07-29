@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ipro-navy: #102a43;
+  --ipro-gold: #b8892d;
+  --ipro-ink: #1f2933;
+  --ipro-muted: #52606d;
+  --ipro-surface: #ffffff;
+  --ipro-soft: #f7f4ed;
+}
+
+html {
+  background: var(--ipro-surface);
+  color: var(--ipro-ink);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ipro-surface);
+  font-family: Inter, Arial, sans-serif;
+}
+
+main {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  color: var(--ipro-navy);
+  font-family: Georgia, serif;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+}
+
+p {
+  color: var(--ipro-muted);
+  font-size: 1.125rem;
+}
