@@ -26,6 +26,26 @@ foreach ($publicPages as $uri => $page) {
     Route::get("/{$uri}", fn (): View => view('page', ['page' => $page]))->name($page);
 }
 
+Route::get('/services/{service}', fn (string $service): View => view('page', [
+    'page' => 'service-detail',
+    'slug' => $service,
+]))->whereIn('service', [
+    'cutlery-restoration',
+    'hollowware-care',
+    'asset-condition-review',
+    'recurring-care-plans',
+])->name('services.show');
+
+Route::get('/industries/{industry}', fn (string $industry): View => view('page', [
+    'page' => 'industry-detail',
+    'slug' => $industry,
+]))->whereIn('industry', [
+    'hotels-resorts',
+    'restaurants-groups',
+    'catering-events',
+    'procurement-operations',
+])->name('industries.show');
+
 Route::post('/rfq', RfqSubmissionController::class)
     ->middleware('throttle:5,1')
     ->name('rfq.store');
