@@ -11,6 +11,21 @@ use Illuminate\View\View;
 
 Route::get('/', fn (): View => view('home'))->name('home');
 
+$publicPages = [
+    'services' => 'services',
+    'industries' => 'industries',
+    'process' => 'process',
+    'results' => 'results',
+    'about' => 'about',
+    'resources' => 'resources',
+    'contact' => 'contact',
+    'portal' => 'portal',
+];
+
+foreach ($publicPages as $uri => $page) {
+    Route::get("/{$uri}", fn (): View => view('page', ['page' => $page]))->name($page);
+}
+
 Route::post('/rfq', RfqSubmissionController::class)
     ->middleware('throttle:5,1')
     ->name('rfq.store');
@@ -44,7 +59,6 @@ Route::get('/ready', function (): JsonResponse {
 
 Route::post('/locale/{locale}', function (string $locale): RedirectResponse {
     abort_unless(in_array($locale, ['en', 'ar'], true), 404);
-
     session(['locale' => $locale]);
 
     return back();
