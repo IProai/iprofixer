@@ -6,9 +6,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRfqRequest;
 use App\Models\FormSubmission;
+use App\Notifications\NewRfqOperationsNotification;
+use App\Notifications\RfqReceivedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -24,7 +28,7 @@ final class RfqSubmissionController
         $storedPaths = [];
 
         try {
-            DB::transaction(function () use ($validated, $request, $correlationId, $reference, $locale, &$storedPaths): void {
+            $submission = DB::transaction(function () use ($validated, $request, $correlationId, $reference, $locale, &$storedPaths): FormSubmission {
                 $submission = FormSubmission::query()->create([
                     'reference' => $reference,
                     'type' => 'rfq',
@@ -101,6 +105,8 @@ final class RfqSubmissionController
                     ], JSON_THROW_ON_ERROR),
                     'occurred_at' => now(),
                 ]);
+
+                return $submission;
             });
         } catch (Throwable $exception) {
             foreach ($storedPaths as $path) {
@@ -110,6 +116,30 @@ final class RfqSubmissionController
             throw $exception;
         }
 
+        $this->sendNotifications($submission, $locale);
+
         return back()->with('rfq_submitted', $reference);
+    }
+
+    private function sendNotifications(FormSubmission $submission, string $locale): void
+    {
+        try {
+            Notification::route('mail', $submission->email)->notify(
+                new RfqReceivedNotification($submission->reference, $submission->contact_name, $locale),
+            );
+
+            $operationsEmail = config('iprofixer.rfq_operations_email');
+
+            if (is_string($operationsEmail) && filter_var($operationsEmail, FILTER_VALIDATE_EMAIL)) {
+                Notification::route('mail', $operationsEmail)->notify(
+                    new NewRfqOperationsNotification($submission),
+                );
+            }
+        } catch (Throwable $exception) {
+            Log::warning('RFQ notification delivery failed.', [
+                'reference' => $submission->reference,
+                'exception' => $exception::class,
+            ]);
+        }
     }
 }
