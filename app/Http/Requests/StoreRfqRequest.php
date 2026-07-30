@@ -14,6 +14,22 @@ final class StoreRfqRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $serviceMap = [
+            'cutlery' => 'cutlery-restoration',
+            'hollowware' => 'hollowware-restoration',
+            'recurring' => 'maintenance-program',
+            'assessment' => 'assessment',
+        ];
+
+        $this->merge([
+            'contact_name' => $this->input('contact_name', $this->input('name')),
+            'organization_name' => $this->input('organization_name', $this->input('company')),
+            'service_code' => $this->input('service_code', $serviceMap[(string) $this->input('service')] ?? $this->input('service')),
+        ]);
+    }
+
     public function rules(): array
     {
         return [
