@@ -51,6 +51,8 @@ final class StoreRfqRequest extends FormRequest
             'campaign_source' => ['nullable', 'string', 'max:120'],
             'campaign_medium' => ['nullable', 'string', 'max:120'],
             'campaign_name' => ['nullable', 'string', 'max:160'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
             'consent' => ['accepted'],
             'website' => ['nullable', 'max:0'],
         ];
