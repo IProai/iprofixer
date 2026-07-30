@@ -18,11 +18,17 @@ final class UpdateContentPageRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        /** @var ContentPage $contentPage */
-        $contentPage = $this->route('contentPage');
+        /** @var ContentPage|null $contentPage */
+        $contentPage = $this->route('content_page') ?? $this->route('contentPage');
 
         return [
-            'slug' => ['required', 'string', 'max:160', 'alpha_dash', Rule::unique('content_pages', 'slug')->ignore($contentPage)],
+            'slug' => [
+                'required',
+                'string',
+                'max:160',
+                'alpha_dash',
+                Rule::unique('content_pages', 'slug')->ignore($contentPage?->getKey()),
+            ],
             'type' => ['required', Rule::in(['page', 'service', 'industry', 'resource'])],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'title_en' => ['required', 'string', 'max:180'],
