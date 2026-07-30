@@ -55,6 +55,12 @@ final class FormSubmission extends Model
         return $this->hasMany(ConsentRecord::class);
     }
 
+    /** @return HasMany<RfqAttachment, $this> */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(RfqAttachment::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function assignee(): BelongsTo
     {
