@@ -18,18 +18,23 @@ final class StoreRfqRequest extends FormRequest
     {
         $serviceMap = [
             'cutlery' => 'cutlery-restoration',
-            'hollowware' => 'hollowware-restoration',
-            'recurring' => 'maintenance-program',
+            'hollowware' => 'hollowware-care',
+            'hollowware-restoration' => 'hollowware-care',
+            'recurring' => 'recurring-care-plans',
+            'maintenance-program' => 'recurring-care-plans',
             'assessment' => 'assessment',
         ];
+
+        $submittedService = (string) $this->input('service_code', $this->input('service'));
 
         $this->merge([
             'contact_name' => $this->input('contact_name', $this->input('name')),
             'organization_name' => $this->input('organization_name', $this->input('company')),
-            'service_code' => $this->input('service_code', $serviceMap[(string) $this->input('service')] ?? $this->input('service')),
+            'service_code' => $serviceMap[$submittedService] ?? $submittedService,
         ]);
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
@@ -37,7 +42,7 @@ final class StoreRfqRequest extends FormRequest
             'organization_name' => ['nullable', 'string', 'max:160'],
             'email' => ['required', 'email:rfc', 'max:190'],
             'phone' => ['nullable', 'string', 'max:40'],
-            'service_code' => ['nullable', Rule::in(['cutlery-restoration', 'hollowware-restoration', 'maintenance-program', 'assessment', 'other'])],
+            'service_code' => ['nullable', Rule::in(['cutlery-restoration', 'hollowware-care', 'recurring-care-plans', 'assessment', 'other'])],
             'property_type' => ['nullable', Rule::in(['hotel', 'restaurant', 'catering', 'healthcare', 'education', 'other'])],
             'urgency' => ['nullable', Rule::in(['standard', 'priority', 'urgent'])],
             'estimated_quantity' => ['nullable', 'integer', 'min:1', 'max:1000000'],
