@@ -16,10 +16,12 @@ final class RfqSubmissionController
     {
         $validated = $request->validated();
         $correlationId = (string) Str::uuid();
+        $reference = sprintf('RFQ-%s-%s', now()->format('Ymd'), Str::upper(Str::random(6)));
         $locale = in_array(app()->getLocale(), ['en', 'ar'], true) ? app()->getLocale() : 'en';
 
-        DB::transaction(function () use ($validated, $request, $correlationId, $locale): void {
+        DB::transaction(function () use ($validated, $request, $correlationId, $reference, $locale): void {
             $submission = FormSubmission::query()->create([
+                'reference' => $reference,
                 'type' => 'rfq',
                 'status' => 'new',
                 'locale' => $locale,
@@ -58,14 +60,14 @@ final class RfqSubmissionController
                 'subject_id' => $submission->getKey(),
                 'correlation_id' => $correlationId,
                 'ip_address' => null,
-                'user_agent' => $request->userAgent(),
+                'user_agent' => Str::limit((string) $request->userAgent(), 1000),
                 'before' => null,
-                'after' => json_encode(['status' => 'new'], JSON_THROW_ON_ERROR),
+                'after' => json_encode(['status' => 'new', 'reference' => $reference], JSON_THROW_ON_ERROR),
                 'metadata' => json_encode(['locale' => $locale, 'source_page' => $submission->source_page], JSON_THROW_ON_ERROR),
                 'occurred_at' => now(),
             ]);
         });
 
-        return back()->with('rfq_submitted', $correlationId);
+        return back()->with('rfq_submitted', $reference);
     }
 }
