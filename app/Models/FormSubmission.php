@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class FormSubmission extends Model
@@ -13,8 +14,10 @@ final class FormSubmission extends Model
     use HasUuids;
 
     protected $fillable = [
+        'reference',
         'type',
         'status',
+        'assigned_to',
         'locale',
         'source_page',
         'campaign_source',
@@ -33,6 +36,7 @@ final class FormSubmission extends Model
         'correlation_id',
         'ip_hash',
         'submitted_at',
+        'last_contacted_at',
     ];
 
     protected function casts(): array
@@ -41,11 +45,19 @@ final class FormSubmission extends Model
             'payload' => 'array',
             'estimated_quantity' => 'integer',
             'submitted_at' => 'immutable_datetime',
+            'last_contacted_at' => 'immutable_datetime',
         ];
     }
 
+    /** @return HasMany<ConsentRecord, $this> */
     public function consents(): HasMany
     {
         return $this->hasMany(ConsentRecord::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 }
