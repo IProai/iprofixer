@@ -13,9 +13,7 @@ final class NewRfqOperationsNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(private readonly FormSubmission $submission)
-    {
-    }
+    public function __construct(private readonly FormSubmission $submission) {}
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -28,9 +26,9 @@ final class NewRfqOperationsNotification extends Notification
         return (new MailMessage)
             ->subject("New RFQ {$this->submission->reference}")
             ->line("Contact: {$this->submission->contact_name}")
-            ->line("Organisation: ".($this->submission->organization_name ?: 'Not provided'))
-            ->line("Service: ".($this->submission->service_code ?: 'Not selected'))
-            ->line("Urgency: ".($this->submission->urgency ?: 'Not selected'))
+            ->line('Organisation: '.($this->submission->organization_name ?: 'Not provided'))
+            ->line('Service: '.($this->submission->service_code ?: 'Not selected'))
+            ->line('Urgency: '.($this->submission->urgency ?: 'Not selected'))
             ->line("Attachments: {$this->submission->attachments()->count()}")
             ->action('Review RFQ', route('admin.rfqs.show', $this->submission));
     }
