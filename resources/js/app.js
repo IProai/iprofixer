@@ -44,7 +44,9 @@ if (menuToggle instanceof HTMLButtonElement && siteNav instanceof HTMLElement) {
   });
 }
 
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reducedMotion = window.matchMedia(
+  '(prefers-reduced-motion: reduce)',
+).matches;
 const revealTargets = document.querySelectorAll(
   '.section, .service-row, .industry-grid a, .signal-grid > div, .page-card, .process-row',
 );
