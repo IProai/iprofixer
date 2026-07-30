@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\RfqSubmissionController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -49,6 +50,10 @@ Route::get('/industries/{industry}', fn (string $industry): View => view('page',
 Route::post('/rfq', RfqSubmissionController::class)
     ->middleware('throttle:5,1')
     ->name('rfq.store');
+
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): void {
+    Route::resource('content-pages', ContentPageController::class)->except('show');
+});
 
 Route::get('/health', function (): JsonResponse {
     return response()->json([
