@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\ContentPageController;
+use App\Http\Controllers\Admin\RfqController;
 use App\Http\Controllers\RfqSubmissionController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -53,6 +54,9 @@ Route::post('/rfq', RfqSubmissionController::class)
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): void {
     Route::resource('content-pages', ContentPageController::class)->except('show');
+    Route::get('rfqs', [RfqController::class, 'index'])->name('rfqs.index');
+    Route::get('rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
+    Route::put('rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
 });
 
 Route::get('/health', function (): JsonResponse {
