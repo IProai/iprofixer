@@ -22,5 +22,9 @@
 .portal-status strong{font-family:Georgia,serif;font-size:2rem;line-height:1.15}
 .honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
 html[dir=rtl] .page-index{direction:ltr}
+:where(a,button,input,select,textarea):focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.motion-ready .section,.motion-ready .service-row,.motion-ready .industry-grid a,.motion-ready .signal-grid>div,.motion-ready .detail-card,.motion-ready .process-list article{opacity:0;transform:translateY(22px)}
+.motion-ready .is-visible{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
 @media(max-width:900px){.detail-card-grid{grid-template-columns:1fr}.process-list article{grid-template-columns:60px 1fr}.process-list article p{grid-column:2}.portal-panel{grid-template-columns:1fr;gap:2.5rem;padding:2rem}.portal-status{border-inline-start:0;border-top:1px solid var(--line);padding:2rem 0 0}}
 @media(max-width:600px){.detail-card{min-height:260px;padding:1.4rem}.detail-card h3{margin-top:3rem}.process-list article{grid-template-columns:42px 1fr;gap:1rem}.portal-panel{padding:1.4rem}}
