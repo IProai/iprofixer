@@ -16,8 +16,7 @@ final class RfqReceivedNotification extends Notification
         private readonly string $reference,
         private readonly string $contactName,
         private readonly string $locale,
-    ) {
-    }
+    ) {}
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
