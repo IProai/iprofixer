@@ -3,13 +3,17 @@
 declare(strict_types=1);
 
 use App\Models\FormSubmission;
+use App\Notifications\RfqReceivedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-it('stores a valid assessment request with consent and audit evidence', function (): void {
+it('stores a valid assessment request with consent, audit and customer notification evidence', function (): void {
+    Notification::fake();
+
     $response = $this->from('/contact')->post('/rfq', [
         'contact_name' => 'Operations Manager',
         'organization_name' => 'Example Hospitality Group',
@@ -38,9 +42,12 @@ it('stores a valid assessment request with consent and audit evidence', function
         'action' => 'public.rfq.submitted',
         'subject_id' => $submission->getKey(),
     ]);
+
+    Notification::assertSentOnDemand(RfqReceivedNotification::class);
 });
 
 it('stores approved RFQ attachments on the private disk with integrity metadata', function (): void {
+    Notification::fake();
     Storage::fake('local');
 
     $response = $this->from('/contact')->post('/rfq', [
@@ -71,6 +78,8 @@ it('stores approved RFQ attachments on the private disk with integrity metadata'
 });
 
 it('rejects invalid or automated assessment requests', function (): void {
+    Notification::fake();
+
     $this->from('/contact')->post('/rfq', [
         'contact_name' => '',
         'email' => 'not-an-email',
@@ -86,4 +95,5 @@ it('rejects invalid or automated assessment requests', function (): void {
     ]);
 
     $this->assertDatabaseCount('form_submissions', 0);
+    Notification::assertNothingSent();
 });
