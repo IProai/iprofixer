@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\Admin\RfqController;
+use App\Http\Controllers\PublicContentController;
 use App\Http\Controllers\RfqSubmissionController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -13,40 +14,30 @@ use Illuminate\View\View;
 
 Route::get('/', fn (): View => view('home'))->name('home');
 
-$publicPages = [
-    'services' => 'services',
-    'industries' => 'industries',
-    'process' => 'process',
-    'results' => 'results',
-    'about' => 'about',
-    'resources' => 'resources',
-    'contact' => 'contact',
-    'portal' => 'portal',
-];
+Route::get('/services', [PublicContentController::class, 'page'])->defaults('page', 'services')->name('services');
+Route::get('/industries', [PublicContentController::class, 'page'])->defaults('page', 'industries')->name('industries');
+Route::get('/process', [PublicContentController::class, 'page'])->defaults('page', 'process')->name('process');
+Route::get('/results', [PublicContentController::class, 'page'])->defaults('page', 'results')->name('results');
+Route::get('/about', [PublicContentController::class, 'page'])->defaults('page', 'about')->name('about');
+Route::get('/resources', [PublicContentController::class, 'page'])->defaults('page', 'resources')->name('resources');
+Route::get('/contact', [PublicContentController::class, 'page'])->defaults('page', 'contact')->name('contact');
+Route::get('/portal', [PublicContentController::class, 'page'])->defaults('page', 'portal')->name('portal');
 
-foreach ($publicPages as $uri => $page) {
-    Route::get("/{$uri}", fn (): View => view('page', ['page' => $page]))->name($page);
-}
+Route::get('/services/{service}', [PublicContentController::class, 'service'])
+    ->whereIn('service', [
+        'cutlery-restoration',
+        'hollowware-care',
+        'asset-condition-review',
+        'recurring-care-plans',
+    ])->name('services.show');
 
-Route::get('/services/{service}', fn (string $service): View => view('page', [
-    'page' => 'service-detail',
-    'slug' => $service,
-]))->whereIn('service', [
-    'cutlery-restoration',
-    'hollowware-care',
-    'asset-condition-review',
-    'recurring-care-plans',
-])->name('services.show');
-
-Route::get('/industries/{industry}', fn (string $industry): View => view('page', [
-    'page' => 'industry-detail',
-    'slug' => $industry,
-]))->whereIn('industry', [
-    'hotels-resorts',
-    'restaurants-groups',
-    'catering-events',
-    'procurement-operations',
-])->name('industries.show');
+Route::get('/industries/{industry}', [PublicContentController::class, 'industry'])
+    ->whereIn('industry', [
+        'hotels-resorts',
+        'restaurants-groups',
+        'catering-events',
+        'procurement-operations',
+    ])->name('industries.show');
 
 Route::post('/rfq', RfqSubmissionController::class)
     ->middleware('throttle:5,1')
