@@ -44,6 +44,45 @@ if (menuToggle instanceof HTMLButtonElement && siteNav instanceof HTMLElement) {
   });
 }
 
+const rfqForm = document.querySelector('form.quick-assessment');
+
+if (rfqForm instanceof HTMLFormElement) {
+  rfqForm.enctype = 'multipart/form-data';
+
+  const submitButton = rfqForm.querySelector('button[type="submit"]');
+  const field = document.createElement('label');
+  const isArabic = document.documentElement.dir === 'rtl';
+
+  field.className = 'full-field';
+  field.textContent = isArabic
+    ? 'صور الحالة أو قائمة الجرد (اختياري)'
+    : 'Condition photos or inventory (optional)';
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.name = 'attachments[]';
+  input.multiple = true;
+  input.accept = '.jpg,.jpeg,.png,.webp,.pdf';
+  input.setAttribute(
+    'aria-describedby',
+    'rfq-attachment-guidance',
+  );
+
+  const guidance = document.createElement('small');
+  guidance.id = 'rfq-attachment-guidance';
+  guidance.textContent = isArabic
+    ? 'حتى 5 ملفات، وبحد أقصى 10 ميجابايت لكل ملف. JPG أو PNG أو WEBP أو PDF.'
+    : 'Up to 5 files, maximum 10 MB each. JPG, PNG, WEBP or PDF.';
+
+  field.append(input, guidance);
+
+  if (submitButton) {
+    rfqForm.insertBefore(field, submitButton);
+  } else {
+    rfqForm.append(field);
+  }
+}
+
 const reducedMotion = window.matchMedia(
   '(prefers-reduced-motion: reduce)',
 ).matches;
