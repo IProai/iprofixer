@@ -104,7 +104,7 @@ final class ContentPageController extends Controller
             ->with('status', 'Content page archived.');
     }
 
-    /** @param array<string, mixed> $validated */
+    /** @param  array<string, mixed>  $validated */
     private function persistTranslations(ContentPage $page, array $validated): void
     {
         foreach (['en', 'ar'] as $locale) {
@@ -126,8 +126,8 @@ final class ContentPageController extends Controller
     }
 
     /**
-     * @param array<string, mixed>|null $before
-     * @param array<string, mixed>|null $after
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>|null  $after
      */
     private function writeAudit(
         Request $request,
