@@ -7,12 +7,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateRfqStatusRequest;
 use App\Models\FormSubmission;
+use App\Models\RfqAttachment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class RfqController extends Controller
 {
@@ -34,10 +37,48 @@ final class RfqController extends Controller
         abort_unless($request->user()?->can('rfq.manage'), 403);
         abort_unless($rfq->type === 'rfq', 404);
 
-        $rfq->load(['assignee', 'consents']);
+        $rfq->load(['assignee', 'consents', 'attachments']);
         $assignees = User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
         return view('admin.rfqs.show', compact('rfq', 'assignees'));
+    }
+
+    public function downloadAttachment(
+        Request $request,
+        FormSubmission $rfq,
+        RfqAttachment $attachment,
+    ): StreamedResponse {
+        abort_unless($request->user()?->can('rfq.manage'), 403);
+        abort_unless($rfq->type === 'rfq', 404);
+        abort_unless($attachment->form_submission_id === $rfq->getKey(), 404);
+
+        $disk = Storage::disk($attachment->disk);
+        abort_unless($disk->exists($attachment->path), 404);
+
+        DB::table('audit_events')->insert([
+            'id' => (string) Str::uuid(),
+            'actor_id' => $request->user()->getKey(),
+            'action' => 'rfq.attachment.downloaded',
+            'subject_type' => RfqAttachment::class,
+            'subject_id' => (string) $attachment->getKey(),
+            'correlation_id' => (string) Str::uuid(),
+            'ip_address' => $request->ip(),
+            'user_agent' => Str::limit((string) $request->userAgent(), 1000),
+            'before' => null,
+            'after' => null,
+            'metadata' => json_encode([
+                'rfq_id' => (string) $rfq->getKey(),
+                'reference' => $rfq->reference,
+                'sha256' => $attachment->sha256,
+            ], JSON_THROW_ON_ERROR),
+            'occurred_at' => now(),
+        ]);
+
+        return $disk->download(
+            $attachment->path,
+            $attachment->original_name,
+            ['Content-Type' => $attachment->mime_type],
+        );
     }
 
     public function update(UpdateRfqStatusRequest $request, FormSubmission $rfq): RedirectResponse
