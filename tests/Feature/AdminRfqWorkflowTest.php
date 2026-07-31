@@ -108,3 +108,63 @@ it('allows only authorised operators to download an attachment belonging to the 
         'actor_id' => $operator->getKey(),
     ]);
 });
+
+it('filters the RFQ inbox by search, status and ownership while preserving authorised access', function (): void {
+    $operator = User::factory()->create();
+    $owner = User::factory()->create(['name' => 'Commercial Owner']);
+    $permission = Permission::create(['name' => 'rfq.manage', 'guard_name' => 'web']);
+    $operator->givePermissionTo($permission);
+
+    FormSubmission::query()->create([
+        'reference' => 'RFQ-20260731-MATCH1',
+        'type' => 'rfq',
+        'status' => 'qualified',
+        'locale' => 'en',
+        'contact_name' => 'Nadia Procurement',
+        'organization_name' => 'Crescent Hotel Group',
+        'email' => 'nadia@crescent.example',
+        'assigned_to' => $owner->getKey(),
+        'correlation_id' => (string) Str::uuid(),
+        'submitted_at' => now(),
+    ]);
+
+    FormSubmission::query()->create([
+        'reference' => 'RFQ-20260731-HIDE01',
+        'type' => 'rfq',
+        'status' => 'new',
+        'locale' => 'en',
+        'contact_name' => 'Other Customer',
+        'organization_name' => 'Different Group',
+        'email' => 'other@example.test',
+        'assigned_to' => null,
+        'correlation_id' => (string) Str::uuid(),
+        'submitted_at' => now()->subMinute(),
+    ]);
+
+    $this->actingAs($operator)
+        ->get(route('admin.rfqs.index', [
+            'search' => 'crescent',
+            'status' => 'qualified',
+            'owner' => $owner->getKey(),
+        ]))
+        ->assertOk()
+        ->assertSee('RFQ-20260731-MATCH1')
+        ->assertSee('Crescent Hotel Group')
+        ->assertSee('1 request found.')
+        ->assertDontSee('RFQ-20260731-HIDE01');
+
+    $this->actingAs($operator)
+        ->get(route('admin.rfqs.index', [
+            'status' => 'not-a-status',
+            'owner' => 'not-a-user',
+        ]))
+        ->assertOk()
+        ->assertSee('RFQ-20260731-MATCH1')
+        ->assertSee('RFQ-20260731-HIDE01');
+
+    $this->actingAs($operator)
+        ->get(route('admin.rfqs.index', ['owner' => 'unassigned']))
+        ->assertOk()
+        ->assertSee('RFQ-20260731-HIDE01')
+        ->assertDontSee('RFQ-20260731-MATCH1');
+});
