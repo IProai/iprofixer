@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateRfqStatusRequest;
 use App\Models\FormSubmission;
 use App\Models\RfqAttachment;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,17 +20,76 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class RfqController extends Controller
 {
+    private const STATUSES = [
+        'new',
+        'qualified',
+        'in_progress',
+        'awaiting_client',
+        'closed_won',
+        'closed_lost',
+    ];
+
     public function index(Request $request): View
     {
         abort_unless($request->user()?->can('rfq.manage'), 403);
 
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'status' => (string) $request->query('status', ''),
+            'owner' => (string) $request->query('owner', ''),
+        ];
+
+        if (! in_array($filters['status'], self::STATUSES, true)) {
+            $filters['status'] = '';
+        }
+
+        $activeUserIds = User::query()
+            ->where('is_active', true)
+            ->pluck('id')
+            ->map(static fn (mixed $id): string => (string) $id)
+            ->all();
+
+        if ($filters['owner'] !== ''
+            && $filters['owner'] !== 'unassigned'
+            && ! in_array($filters['owner'], $activeUserIds, true)) {
+            $filters['owner'] = '';
+        }
+
         $rfqs = FormSubmission::query()
             ->where('type', 'rfq')
             ->with('assignee')
-            ->latest('submitted_at')
-            ->paginate(25);
+            ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
+                $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $filters['search']).'%';
 
-        return view('admin.rfqs.index', compact('rfqs'));
+                $query->where(function (Builder $searchQuery) use ($term): void {
+                    $searchQuery
+                        ->where('reference', 'ilike', $term)
+                        ->orWhere('contact_name', 'ilike', $term)
+                        ->orWhere('organization_name', 'ilike', $term)
+                        ->orWhere('email', 'ilike', $term);
+                });
+            })
+            ->when($filters['status'] !== '', fn (Builder $query) => $query->where('status', $filters['status']))
+            ->when($filters['owner'] === 'unassigned', fn (Builder $query) => $query->whereNull('assigned_to'))
+            ->when(
+                $filters['owner'] !== '' && $filters['owner'] !== 'unassigned',
+                fn (Builder $query) => $query->where('assigned_to', $filters['owner']),
+            )
+            ->latest('submitted_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        $assignees = User::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('admin.rfqs.index', [
+            'rfqs' => $rfqs,
+            'assignees' => $assignees,
+            'filters' => $filters,
+            'statuses' => self::STATUSES,
+        ]);
     }
 
     public function show(Request $request, FormSubmission $rfq): View
