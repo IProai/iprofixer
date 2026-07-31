@@ -84,7 +84,7 @@ const reducedMotion = window.matchMedia(
   '(prefers-reduced-motion: reduce)',
 ).matches;
 const revealTargets = document.querySelectorAll(
-  '.section, .service-row, .industry-grid a, .signal-grid > div, .page-card, .process-row',
+  '.section, .service-row, .industry-grid a, .signal-grid > div, .detail-card, .process-list article, .scope-list article, .proof-placeholder',
 );
 
 if (!reducedMotion && 'IntersectionObserver' in window) {
