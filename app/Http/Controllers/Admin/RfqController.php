@@ -60,13 +60,14 @@ final class RfqController extends Controller
             ->with('assignee')
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                 $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $filters['search']).'%';
+                $operator = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
 
-                $query->where(function (Builder $searchQuery) use ($term): void {
+                $query->where(function (Builder $searchQuery) use ($operator, $term): void {
                     $searchQuery
-                        ->where('reference', 'ilike', $term)
-                        ->orWhere('contact_name', 'ilike', $term)
-                        ->orWhere('organization_name', 'ilike', $term)
-                        ->orWhere('email', 'ilike', $term);
+                        ->where('reference', $operator, $term)
+                        ->orWhere('contact_name', $operator, $term)
+                        ->orWhere('organization_name', $operator, $term)
+                        ->orWhere('email', $operator, $term);
                 });
             })
             ->when($filters['status'] !== '', fn (Builder $query) => $query->where('status', $filters['status']))
