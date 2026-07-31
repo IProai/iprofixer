@@ -17,6 +17,57 @@
         <a href="{{ route('admin.content-pages.index') }}">Content management</a>
     </header>
 
+    <section aria-labelledby="rfq-filter-heading">
+        <h2 id="rfq-filter-heading">Find requests</h2>
+        <form method="get" action="{{ route('admin.rfqs.index') }}" class="admin-filter-form">
+            <label>
+                Search
+                <input
+                    type="search"
+                    name="search"
+                    value="{{ $filters['search'] }}"
+                    placeholder="Reference, customer, company or email"
+                >
+            </label>
+
+            <label>
+                Status
+                <select name="status">
+                    <option value="">All statuses</option>
+                    @foreach ($statuses as $status)
+                        <option value="{{ $status }}" @selected($filters['status'] === $status)>
+                            {{ str_replace('_', ' ', ucfirst($status)) }}
+                        </option>
+                    @endforeach
+                </select>
+            </label>
+
+            <label>
+                Owner
+                <select name="owner">
+                    <option value="">All owners</option>
+                    <option value="unassigned" @selected($filters['owner'] === 'unassigned')>Unassigned</option>
+                    @foreach ($assignees as $assignee)
+                        <option value="{{ $assignee->id }}" @selected($filters['owner'] === (string) $assignee->id)>
+                            {{ $assignee->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </label>
+
+            <div class="admin-filter-actions">
+                <button type="submit">Apply filters</button>
+                @if ($filters['search'] !== '' || $filters['status'] !== '' || $filters['owner'] !== '')
+                    <a href="{{ route('admin.rfqs.index') }}">Clear filters</a>
+                @endif
+            </div>
+        </form>
+    </section>
+
+    <p role="status">
+        {{ number_format($rfqs->total()) }} {{ Str::plural('request', $rfqs->total()) }} found.
+    </p>
+
     <div class="admin-table-wrap">
         <table>
             <thead>
@@ -45,7 +96,15 @@
                     <td>{{ $rfq->submitted_at?->format('d M Y H:i') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7">No RFQs have been received.</td></tr>
+                <tr>
+                    <td colspan="7">
+                        @if ($filters['search'] !== '' || $filters['status'] !== '' || $filters['owner'] !== '')
+                            No RFQs match the current filters.
+                        @else
+                            No RFQs have been received.
+                        @endif
+                    </td>
+                </tr>
             @endforelse
             </tbody>
         </table>
