@@ -73,16 +73,81 @@
   color: var(--muted);
 }
 
+.scope-section {
+  background: var(--paper);
+}
+
+.scope-grid,
+.proof-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(3rem, 8vw, 7rem);
+  align-items: start;
+}
+
+.scope-grid h2,
+.proof-grid h2 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: clamp(2.5rem, 4.4vw, 5rem);
+  font-weight: 500;
+  line-height: 1.04;
+}
+
+.scope-grid > div > p,
+.proof-grid > div > p {
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 1.08rem;
+}
+
+.scope-list {
+  border-top: 1px solid var(--line);
+}
+
+.scope-list article {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 1rem;
+  align-items: center;
+  min-height: 112px;
+  border-bottom: 1px solid var(--line);
+}
+
+.scope-list span {
+  color: var(--gold-2);
+  font-family: Georgia, serif;
+  font-size: 1.35rem;
+}
+
+.scope-list strong {
+  font-family: Georgia, serif;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 500;
+}
+
 .proof-placeholder {
   display: grid;
-  min-height: 270px;
+  min-height: 360px;
   place-items: center;
+  align-content: center;
+  gap: 0.8rem;
   border: 1px dashed #aeb8c0;
-  margin-top: 2rem;
+  padding: 2rem;
   background: var(--paper);
   color: var(--muted);
-  font-weight: 800;
   text-align: center;
+}
+
+.proof-placeholder span {
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.proof-placeholder small {
+  max-width: 480px;
+  font-size: 0.9rem;
 }
 
 .feature-list {
@@ -166,7 +231,9 @@ html[dir='rtl'] .page-index {
 .motion-ready .industry-grid a,
 .motion-ready .signal-grid > div,
 .motion-ready .detail-card,
-.motion-ready .process-list article {
+.motion-ready .process-list article,
+.motion-ready .scope-list article,
+.motion-ready .proof-placeholder {
   opacity: 0;
   transform: translateY(22px);
 }
@@ -195,7 +262,9 @@ html[dir='rtl'] .page-index {
 }
 
 @media (max-width: 900px) {
-  .detail-card-grid {
+  .detail-card-grid,
+  .scope-grid,
+  .proof-grid {
     grid-template-columns: 1fr;
   }
 
@@ -233,6 +302,11 @@ html[dir='rtl'] .page-index {
   .process-list article {
     grid-template-columns: 42px 1fr;
     gap: 1rem;
+  }
+
+  .scope-list article {
+    grid-template-columns: 48px 1fr;
+    min-height: 92px;
   }
 
   .portal-panel {
