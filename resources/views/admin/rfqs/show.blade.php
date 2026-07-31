@@ -36,6 +36,20 @@
                 <dt>Submitted</dt><dd>{{ $rfq->submitted_at?->format('d M Y H:i') }}</dd>
                 <dt>Message</dt><dd>{{ $rfq->message ?: 'No additional message.' }}</dd>
             </dl>
+
+            <h2>Attachments</h2>
+            @forelse ($rfq->attachments as $attachment)
+                <p>
+                    <a href="{{ route('admin.rfqs.attachments.download', [$rfq, $attachment]) }}">
+                        {{ $attachment->original_name }}
+                    </a>
+                    <small>
+                        {{ number_format($attachment->size_bytes / 1024, 1) }} KB · {{ $attachment->mime_type }}
+                    </small>
+                </p>
+            @empty
+                <p>No attachments were submitted.</p>
+            @endforelse
         </article>
 
         <aside>
