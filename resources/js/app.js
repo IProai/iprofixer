@@ -63,10 +63,7 @@ if (rfqForm instanceof HTMLFormElement) {
   input.name = 'attachments[]';
   input.multiple = true;
   input.accept = '.jpg,.jpeg,.png,.webp,.pdf';
-  input.setAttribute(
-    'aria-describedby',
-    'rfq-attachment-guidance',
-  );
+  input.setAttribute('aria-describedby', 'rfq-attachment-guidance');
 
   const guidance = document.createElement('small');
   guidance.id = 'rfq-attachment-guidance';
