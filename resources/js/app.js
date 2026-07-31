@@ -4,15 +4,26 @@ const menuToggle = document.querySelector('.menu-toggle');
 const siteNav = document.querySelector('#site-nav');
 
 if (menuToggle instanceof HTMLButtonElement && siteNav instanceof HTMLElement) {
-  const closeMenu = () => {
-    siteNav.classList.remove('is-open');
-    menuToggle.setAttribute('aria-expanded', 'false');
+  const setMenuState = (isOpen) => {
+    siteNav.classList.toggle('is-open', isOpen);
+    document.body.classList.toggle('nav-open', isOpen);
+    menuToggle.setAttribute('aria-expanded', String(isOpen));
+    menuToggle.setAttribute(
+      'aria-label',
+      isOpen
+        ? document.documentElement.dir === 'rtl'
+          ? 'إغلاق القائمة الرئيسية'
+          : 'Close main menu'
+        : document.documentElement.dir === 'rtl'
+          ? 'فتح القائمة الرئيسية'
+          : 'Open main menu',
+    );
   };
 
+  const closeMenu = () => setMenuState(false);
+
   menuToggle.addEventListener('click', () => {
-    const willOpen = !siteNav.classList.contains('is-open');
-    siteNav.classList.toggle('is-open', willOpen);
-    menuToggle.setAttribute('aria-expanded', String(willOpen));
+    setMenuState(!siteNav.classList.contains('is-open'));
   });
 
   siteNav.querySelectorAll('a').forEach((link) => {
@@ -20,7 +31,7 @@ if (menuToggle instanceof HTMLButtonElement && siteNav instanceof HTMLElement) {
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && siteNav.classList.contains('is-open')) {
       closeMenu();
       menuToggle.focus();
     }
