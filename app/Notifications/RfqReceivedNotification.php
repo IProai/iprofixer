@@ -15,7 +15,7 @@ final class RfqReceivedNotification extends Notification
     public function __construct(
         private readonly string $reference,
         private readonly string $contactName,
-        private readonly string $locale,
+        private readonly string $requestedLocale,
     ) {}
 
     /** @return array<int, string> */
@@ -26,7 +26,7 @@ final class RfqReceivedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        if ($this->locale === 'ar') {
+        if ($this->requestedLocale === 'ar') {
             return (new MailMessage)
                 ->subject("تم استلام طلب التقييم {$this->reference}")
                 ->greeting("مرحباً {$this->contactName}")
