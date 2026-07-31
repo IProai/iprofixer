@@ -153,7 +153,9 @@ if (rfqForm instanceof HTMLFormElement) {
 
       submitButton.classList.add('is-submitting');
       submitButton.setAttribute('aria-busy', 'true');
-      submitButton.textContent = isArabic ? 'جارٍ إرسال الطلب…' : 'Sending request…';
+      submitButton.textContent = isArabic
+        ? 'جارٍ إرسال الطلب…'
+        : 'Sending request…';
 
       window.setTimeout(() => {
         submitButton.classList.remove('is-submitting');
@@ -176,7 +178,11 @@ if (rfqForm instanceof HTMLFormElement) {
   );
 
   rfqForm.addEventListener('input', (event) => {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || event.target instanceof HTMLTextAreaElement) {
+    if (
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLSelectElement ||
+      event.target instanceof HTMLTextAreaElement
+    ) {
       if (event.target.checkValidity()) {
         event.target.closest('label')?.classList.remove('has-error');
       }
