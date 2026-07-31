@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\FormSubmission;
+use App\Models\RfqAttachment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 
@@ -55,6 +57,54 @@ it('allows an authorised operator to assign and progress an RFQ with audit evide
     $this->assertDatabaseHas('audit_events', [
         'action' => 'rfq.workflow.updated',
         'subject_id' => (string) $rfq->getKey(),
+        'actor_id' => $operator->getKey(),
+    ]);
+});
+
+it('allows only authorised operators to download an attachment belonging to the RFQ', function (): void {
+    Storage::fake('local');
+
+    $operator = User::factory()->create();
+    $unauthorisedUser = User::factory()->create();
+    $permission = Permission::create(['name' => 'rfq.manage', 'guard_name' => 'web']);
+    $operator->givePermissionTo($permission);
+
+    $rfq = FormSubmission::query()->create([
+        'reference' => 'RFQ-20260731-FILE01',
+        'type' => 'rfq',
+        'status' => 'new',
+        'locale' => 'en',
+        'contact_name' => 'Hotel Operations',
+        'email' => 'operations@example.test',
+        'correlation_id' => (string) Str::uuid(),
+        'submitted_at' => now(),
+    ]);
+
+    $path = "rfq/{$rfq->getKey()}/condition.pdf";
+    Storage::disk('local')->put($path, 'private-condition-report');
+
+    $attachment = RfqAttachment::query()->create([
+        'form_submission_id' => $rfq->getKey(),
+        'disk' => 'local',
+        'path' => $path,
+        'original_name' => 'condition-report.pdf',
+        'mime_type' => 'application/pdf',
+        'size_bytes' => 24,
+        'sha256' => hash('sha256', 'private-condition-report'),
+    ]);
+
+    $url = route('admin.rfqs.attachments.download', [$rfq, $attachment]);
+
+    $this->actingAs($unauthorisedUser)->get($url)->assertForbidden();
+
+    $this->actingAs($operator)
+        ->get($url)
+        ->assertOk()
+        ->assertDownload('condition-report.pdf');
+
+    $this->assertDatabaseHas('audit_events', [
+        'action' => 'rfq.attachment.downloaded',
+        'subject_id' => (string) $attachment->getKey(),
         'actor_id' => $operator->getKey(),
     ]);
 });
