@@ -38,6 +38,12 @@ final class ContentPage extends Model
         return $this->hasMany(ContentTranslation::class);
     }
 
+    /** @return HasMany<ContentPageRevision, $this> */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(ContentPageRevision::class)->latest('revision_number');
+    }
+
     public function translation(string $locale): ?ContentTranslation
     {
         return $this->translations->firstWhere('locale', $locale);
