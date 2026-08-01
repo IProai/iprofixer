@@ -48,7 +48,9 @@ final class ContentPageController extends Controller
             ]);
 
             $this->persistTranslations($page, $validated);
-            $this->writeAudit($request, 'content.page.created', $page, null, $page->fresh()->toArray());
+            $page->refresh();
+            $this->createRevision($page, $request, 'Initial content revision.');
+            $this->writeAudit($request, 'content.page.created', $page, null, $page->toArray());
 
             return $page;
         });
@@ -61,6 +63,8 @@ final class ContentPageController extends Controller
     public function edit(Request $request, ContentPage $contentPage): View
     {
         abort_unless($request->user()?->can('content.manage'), 403);
+
+        $contentPage->load(['revisions.author']);
 
         return view('admin.content-pages.edit', compact('contentPage'));
     }
@@ -82,7 +86,7 @@ final class ContentPageController extends Controller
 
             $this->persistTranslations($contentPage, $validated);
             $contentPage->refresh();
-
+            $this->createRevision($contentPage, $request, 'Content updated.');
             $this->writeAudit($request, 'content.page.updated', $contentPage, $before, $contentPage->toArray());
         });
 
@@ -123,6 +127,19 @@ final class ContentPageController extends Controller
 
         $page->unsetRelation('translations');
         $page->load('translations');
+    }
+
+    private function createRevision(ContentPage $page, Request $request, string $summary): void
+    {
+        $revisionNumber = ((int) $page->revisions()->max('revision_number')) + 1;
+
+        $page->revisions()->create([
+            'created_by' => $request->user()?->getKey(),
+            'revision_number' => $revisionNumber,
+            'status' => $page->status,
+            'snapshot' => $page->toArray(),
+            'change_summary' => $summary,
+        ]);
     }
 
     /**
