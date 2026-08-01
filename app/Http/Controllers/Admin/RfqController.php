@@ -40,7 +40,7 @@ final class RfqController extends Controller
             'owner' => (string) $request->query('owner', ''),
         ];
 
-        if (! in_array($filters['status'], self::STATUSES, true)) {
+        if (!in_array($filters['status'], self::STATUSES, true)) {
             $filters['status'] = '';
         }
 
@@ -52,7 +52,7 @@ final class RfqController extends Controller
 
         if ($filters['owner'] !== ''
             && $filters['owner'] !== 'unassigned'
-            && ! in_array($filters['owner'], $activeUserIds, true)) {
+            && !in_array($filters['owner'], $activeUserIds, true)) {
             $filters['owner'] = '';
         }
 
