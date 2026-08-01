@@ -169,3 +169,12 @@ No ad-hoc public PHP command runner is allowed.
 ## Current known incident captured
 
 The first preview attempt copied application files but did not contain a real `.env`, so Laravel had no `APP_KEY` and returned HTTP 500. This pack prevents recurrence by making the runtime environment, compiled assets, dependencies, rewrite rules and acceptance checks explicit release inputs.
+
+## Media Library Storage & Backup Governance
+
+1. **Storage Directory Permissions**: Ensure `storage/app/public/media` directory has write permissions (`755`).
+2. **Symlink Behavior**: Execute `php artisan storage:link` or verify Hostinger web server maps `public/storage` to `storage/app/public`.
+3. **Media Backup Policy**:
+   - `storage/app/public/media` contains customer and governed media uploads and must NEVER be committed to Git.
+   - Backup `storage/app/public/` during routine backup procedures alongside database snapshots.
+   - Restoring media requires restoring file paths to match `media_assets` table `disk` and `path` values.

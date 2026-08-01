@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\ContentPageController;
+use App\Http\Controllers\Admin\MediaAssetController;
 use App\Http\Controllers\Admin\RfqController;
 use App\Http\Controllers\Admin\RfqReportController;
 use App\Http\Controllers\PublicContentController;
@@ -50,6 +51,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::post('content-pages/{content_page}/publish', [ContentPageController::class, 'publish'])->name('content-pages.publish');
     Route::post('content-pages/{content_page}/unpublish', [ContentPageController::class, 'unpublish'])->name('content-pages.unpublish');
     Route::post('content-pages/{content_page}/revisions/{revision}/restore', [ContentPageController::class, 'restore'])->name('content-pages.revisions.restore');
+    Route::get('media/picker', [MediaAssetController::class, 'picker'])->name('media.picker');
+    Route::post('media/{id}/restore', [MediaAssetController::class, 'restore'])->name('media.restore');
+    Route::delete('media/{id}/force', [MediaAssetController::class, 'forceDelete'])->name('media.force-delete');
+    Route::resource('media', MediaAssetController::class);
     Route::resource('content-pages', ContentPageController::class)->except('show');
     Route::get('rfqs/report', RfqReportController::class)->name('rfqs.report');
     Route::get('rfqs', [RfqController::class, 'index'])->name('rfqs.index');
