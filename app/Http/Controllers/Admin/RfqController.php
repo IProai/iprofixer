@@ -40,7 +40,7 @@ final class RfqController extends Controller
             'owner' => (string) $request->query('owner', ''),
         ];
 
-        if (!in_array($filters['status'], self::STATUSES, true)) {
+        if (! in_array($filters['status'], self::STATUSES, true)) {
             $filters['status'] = '';
         }
 
@@ -50,9 +50,11 @@ final class RfqController extends Controller
             ->map(static fn (mixed $id): string => (string) $id)
             ->all();
 
-        if ($filters['owner'] !== ''
+        if (
+            $filters['owner'] !== ''
             && $filters['owner'] !== 'unassigned'
-            && !in_array($filters['owner'], $activeUserIds, true)) {
+            && ! in_array($filters['owner'], $activeUserIds, true)
+        ) {
             $filters['owner'] = '';
         }
 
@@ -146,8 +148,7 @@ final class RfqController extends Controller
         Request $request,
         FormSubmission $rfq,
         RfqAttachment $attachment,
-    ): StreamedResponse
-    {
+    ): StreamedResponse {
         abort_unless($request->user()?->can('rfq.manage'), 403);
         abort_unless($rfq->type === 'rfq', 404);
         abort_unless($attachment->form_submission_id === $rfq->getKey(), 404);
