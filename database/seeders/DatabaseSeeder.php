@@ -12,6 +12,7 @@ final class DatabaseSeeder extends Seeder
     {
         $this->call([
             CmsPermissionSeeder::class,
+            NavigationSeeder::class,
         ]);
     }
 }

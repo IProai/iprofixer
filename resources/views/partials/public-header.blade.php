@@ -1,4 +1,10 @@
-@php($ar = app()->getLocale() === 'ar')
+@php
+    $locale = app()->getLocale();
+    $ar = $locale === 'ar';
+    $navService = app(\App\Services\NavigationService::class);
+    $headerMenu = $navService->getPublicMenu('header', $locale);
+    $mobileMenu = $navService->getPublicMenu('mobile', $locale);
+@endphp
 <a class="skip-link" href="#main">{{ $ar ? 'انتقل إلى المحتوى' : 'Skip to content' }}</a>
 <header class="site-header">
     <div class="announcement">
@@ -15,15 +21,28 @@
             <span>{{ $ar ? 'القائمة' : 'Menu' }}</span>
         </button>
         <nav id="site-nav" class="site-nav" aria-label="{{ $ar ? 'التنقل الرئيسي' : 'Primary navigation' }}">
-            <a href="{{ route('services') }}" @class(['is-current' => request()->routeIs('services*')]) @if(request()->routeIs('services*')) aria-current="page" @endif>{{ $ar ? 'الخدمات' : 'Services' }}</a>
-            <a href="{{ route('industries') }}" @class(['is-current' => request()->routeIs('industries*')]) @if(request()->routeIs('industries*')) aria-current="page" @endif>{{ $ar ? 'القطاعات' : 'Industries' }}</a>
-            <a href="{{ route('process') }}" @class(['is-current' => request()->routeIs('process')]) @if(request()->routeIs('process')) aria-current="page" @endif>{{ $ar ? 'آلية العمل' : 'Process' }}</a>
-            <a href="{{ route('results') }}" @class(['is-current' => request()->routeIs('results')]) @if(request()->routeIs('results')) aria-current="page" @endif>{{ $ar ? 'الإثبات والنتائج' : 'Proof & Results' }}</a>
-            <a href="{{ route('about') }}" @class(['is-current' => request()->routeIs('about')]) @if(request()->routeIs('about')) aria-current="page" @endif>{{ $ar ? 'عن الشركة' : 'About' }}</a>
-            <a href="{{ route('resources') }}" @class(['is-current' => request()->routeIs('resources')]) @if(request()->routeIs('resources')) aria-current="page" @endif>{{ $ar ? 'الموارد' : 'Resources' }}</a>
+            @if (count($headerMenu) > 0)
+                @foreach ($headerMenu as $item)
+                    <a href="{{ $item['url'] }}" @if(!empty($item['target_blank'])) target="_blank" @endif @if(!empty($item['rel'])) rel="{{ $item['rel'] }}" @endif @class(['is-current' => request()->fullUrlIs($item['url']) || request()->url() === $item['url']]) @if(request()->fullUrlIs($item['url']) || request()->url() === $item['url']) aria-current="page" @endif>{{ $item['label'] }}</a>
+                @endforeach
+            @else
+                <a href="{{ route('services') }}" @class(['is-current' => request()->routeIs('services*')]) @if(request()->routeIs('services*')) aria-current="page" @endif>{{ $ar ? 'الخدمات' : 'Services' }}</a>
+                <a href="{{ route('industries') }}" @class(['is-current' => request()->routeIs('industries*')]) @if(request()->routeIs('industries*')) aria-current="page" @endif>{{ $ar ? 'القطاعات' : 'Industries' }}</a>
+                <a href="{{ route('process') }}" @class(['is-current' => request()->routeIs('process')]) @if(request()->routeIs('process')) aria-current="page" @endif>{{ $ar ? 'آلية العمل' : 'Process' }}</a>
+                <a href="{{ route('results') }}" @class(['is-current' => request()->routeIs('results')]) @if(request()->routeIs('results')) aria-current="page" @endif>{{ $ar ? 'الإثبات والنتائج' : 'Proof & Results' }}</a>
+                <a href="{{ route('about') }}" @class(['is-current' => request()->routeIs('about')]) @if(request()->routeIs('about')) aria-current="page" @endif>{{ $ar ? 'عن الشركة' : 'About' }}</a>
+                <a href="{{ route('resources') }}" @class(['is-current' => request()->routeIs('resources')]) @if(request()->routeIs('resources')) aria-current="page" @endif>{{ $ar ? 'الموارد' : 'Resources' }}</a>
+            @endif
+
             <div class="mobile-nav-actions">
-                <a href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a>
-                <a class="button button-gold" href="{{ route('contact') }}">{{ $ar ? 'اطلب تقييماً' : 'Request assessment' }}</a>
+                @if (count($mobileMenu) > 0)
+                    @foreach ($mobileMenu as $mItem)
+                        <a href="{{ $mItem['url'] }}" @if(!empty($mItem['target_blank'])) target="_blank" @endif>{{ $mItem['label'] }}</a>
+                    @endforeach
+                @else
+                    <a href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a>
+                    <a class="button button-gold" href="{{ route('contact') }}">{{ $ar ? 'اطلب تقييماً' : 'Request assessment' }}</a>
+                @endif
             </div>
         </nav>
         <div class="nav-actions">
