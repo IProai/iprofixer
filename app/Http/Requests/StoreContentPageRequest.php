@@ -11,7 +11,14 @@ final class StoreContentPageRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->can('content.manage');
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can('content.create')
+            || $user->can('content.edit')
+            || $user->can('content.manage');
     }
 
     /** @return array<string, mixed> */
@@ -20,7 +27,10 @@ final class StoreContentPageRequest extends FormRequest
         return [
             'slug' => ['required', 'string', 'max:160', 'alpha_dash', Rule::unique('content_pages', 'slug')],
             'type' => ['required', Rule::in(['page', 'service', 'industry', 'resource'])],
-            'status' => ['required', Rule::in(['draft', 'published'])],
+            'status' => ['required', Rule::in(['draft', 'review', 'approved', 'scheduled', 'published'])],
+            'scheduled_for' => ['nullable', 'date'],
+            'approve_en' => ['nullable', 'boolean'],
+            'approve_ar' => ['nullable', 'boolean'],
             'title_en' => ['required', 'string', 'max:180'],
             'title_ar' => ['required', 'string', 'max:180'],
             'summary_en' => ['nullable', 'string', 'max:500'],

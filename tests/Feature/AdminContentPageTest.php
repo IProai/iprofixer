@@ -26,6 +26,8 @@ it('creates and updates bilingual content with audit evidence', function (): voi
         'slug' => 'cutlery-care-guide',
         'type' => 'resource',
         'status' => 'draft',
+        'approve_en' => true,
+        'approve_ar' => true,
         'title_en' => 'Cutlery care guide',
         'title_ar' => 'دليل العناية بأدوات المائدة',
         'summary_en' => 'Operational care guidance.',

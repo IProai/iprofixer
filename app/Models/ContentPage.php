@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class ContentPage extends Model
 {
+    use HasFactory;
     use SoftDeletes;
 
     protected $fillable = [
@@ -49,11 +51,41 @@ final class ContentPage extends Model
         return $this->translations->firstWhere('locale', $locale);
     }
 
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    public function isInReview(): bool
+    {
+        return $this->status === 'review';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isScheduled(): bool
+    {
+        return $this->status === 'scheduled';
+    }
+
     public function isPublished(): bool
     {
         return $this->status === 'published'
             && $this->published_at !== null
             && $this->published_at->isPast();
+    }
+
+    public function isTranslationApproved(string $locale): bool
+    {
+        return (bool) $this->translation($locale)?->translation_approved;
+    }
+
+    public function isBilinguallyApproved(): bool
+    {
+        return $this->isTranslationApproved('en') && $this->isTranslationApproved('ar');
     }
 
     public function getTitleEnAttribute(): ?string

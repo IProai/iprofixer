@@ -28,8 +28,9 @@
                 <th>Arabic title</th>
                 <th>Type</th>
                 <th>Status</th>
+                <th>Bilingual Approval</th>
                 <th>Updated</th>
-                <th></th>
+                <th>Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -39,11 +40,18 @@
                     <td dir="rtl">{{ $page->title_ar }}</td>
                     <td>{{ ucfirst($page->type) }}</td>
                     <td>{{ ucfirst($page->status) }}</td>
+                    <td>
+                        EN: {{ $page->isTranslationApproved('en') ? '✓' : '✗' }} |
+                        AR: {{ $page->isTranslationApproved('ar') ? '✓' : '✗' }}
+                    </td>
                     <td>{{ $page->updated_at?->diffForHumans() }}</td>
-                    <td><a href="{{ route('admin.content-pages.edit', $page) }}">Edit</a></td>
+                    <td>
+                        <a href="{{ route('admin.content-pages.preview', $page) }}" target="_blank">Preview</a> |
+                        <a href="{{ route('admin.content-pages.edit', $page) }}">Edit</a>
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="6">No content pages yet.</td></tr>
+                <tr><td colspan="7">No content pages yet.</td></tr>
             @endforelse
             </tbody>
         </table>

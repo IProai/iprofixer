@@ -45,6 +45,11 @@ Route::post('/rfq', RfqSubmissionController::class)
     ->name('rfq.store');
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('content-pages/{content_page}/preview', [ContentPageController::class, 'preview'])->name('content-pages.preview');
+    Route::post('content-pages/{content_page}/approve', [ContentPageController::class, 'approve'])->name('content-pages.approve');
+    Route::post('content-pages/{content_page}/publish', [ContentPageController::class, 'publish'])->name('content-pages.publish');
+    Route::post('content-pages/{content_page}/unpublish', [ContentPageController::class, 'unpublish'])->name('content-pages.unpublish');
+    Route::post('content-pages/{content_page}/revisions/{revision}/restore', [ContentPageController::class, 'restore'])->name('content-pages.revisions.restore');
     Route::resource('content-pages', ContentPageController::class)->except('show');
     Route::get('rfqs/report', RfqReportController::class)->name('rfqs.report');
     Route::get('rfqs', [RfqController::class, 'index'])->name('rfqs.index');

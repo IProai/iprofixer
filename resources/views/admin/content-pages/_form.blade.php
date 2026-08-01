@@ -16,11 +16,29 @@
 
     <label>Status
         <select name="status" required>
-            @foreach (['draft', 'published'] as $status)
+            @foreach (['draft', 'review', 'approved', 'scheduled', 'published'] as $status)
                 <option value="{{ $status }}" @selected(old('status', $contentPage->status ?? 'draft') === $status)>{{ ucfirst($status) }}</option>
             @endforeach
         </select>
+        @error('status')<small>{{ $message }}</small>@enderror
     </label>
+
+    <label>Scheduled For (UTC)
+        <input type="datetime-local" name="scheduled_for" value="{{ old('scheduled_for', isset($contentPage->scheduled_for) ? $contentPage->scheduled_for->format('Y-m-d\TH:i') : '') }}">
+        @error('scheduled_for')<small>{{ $message }}</small>@enderror
+    </label>
+
+    <div class="form-checkbox-group">
+        <label>
+            <input type="checkbox" name="approve_en" value="1" @checked(old('approve_en', isset($contentPage) && $contentPage->isTranslationApproved('en')))>
+            Approve English Translation
+        </label>
+
+        <label dir="rtl">
+            <input type="checkbox" name="approve_ar" value="1" @checked(old('approve_ar', isset($contentPage) && $contentPage->isTranslationApproved('ar')))>
+            اعتماد الترجمة العربية
+        </label>
+    </div>
 
     <label>English title
         <input name="title_en" value="{{ old('title_en', $contentPage->title_en ?? '') }}" required>

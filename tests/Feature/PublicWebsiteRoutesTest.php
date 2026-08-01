@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+
+uses(RefreshDatabase::class);
 
 it('serves every revenue-critical public page in English', function (string $uri, string $expected): void {
     /** @var TestResponse $response */

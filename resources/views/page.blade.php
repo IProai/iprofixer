@@ -60,6 +60,9 @@
         $seoTitle = $translation?->seo_title ?: ($ar ? $copy[1] : $copy[0]);
         $seoDescription = $translation?->seo_description ?: ($ar ? $copy[3] : $copy[2]);
     @endphp
+    @if(!empty($isPreview))
+        <meta name="robots" content="noindex, nofollow">
+    @endif
     <meta name="description" content="{{ $seoDescription }}">
     <title>{{ $seoTitle }} | IProFixer</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
