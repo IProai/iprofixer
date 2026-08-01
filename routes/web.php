@@ -47,7 +47,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::resource('content-pages', ContentPageController::class)->except('show');
     Route::get('rfqs', [RfqController::class, 'index'])->name('rfqs.index');
     Route::get('rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
-    Route::post('rfqs/{rfq}/notes', [RfqController::class, 'storeNote'])->name('rfqs.notes.store');
+    Route::post(
+        'rfqs/{rfq}/notes',
+        [RfqController::class, 'storeNote'],
+    )->name('rfqs.notes.store');
     Route::get('rfqs/{rfq}/attachments/{attachment}', [RfqController::class, 'downloadAttachment'])
         ->name('rfqs.attachments.download');
     Route::put('rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
