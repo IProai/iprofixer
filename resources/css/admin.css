@@ -1,0 +1,21 @@
+:root{--admin-ink:#0c2238;--admin-muted:#637282;--admin-line:#dfe4e8;--admin-paper:#f7f5ef;--admin-gold:#c99a49}
+.admin-shell{width:min(100% - 40px,1280px);margin-inline:auto;padding:3rem 0 5rem;color:var(--admin-ink)}
+.admin-header{display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;border-bottom:1px solid var(--admin-line);margin-bottom:2.5rem;padding-bottom:2rem}
+.admin-header h1{margin:.25rem 0;font-family:Georgia,serif;font-size:clamp(2.3rem,5vw,4.5rem);font-weight:500;line-height:1.05}
+.admin-header p{margin:.4rem 0;color:var(--admin-muted)}
+.admin-header>a{border:1px solid var(--admin-line);padding:.75rem 1rem;font-weight:800}
+.admin-shell section{margin-top:2.5rem}
+.admin-shell h2{font-family:Georgia,serif;font-size:1.8rem;font-weight:500}
+.admin-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.admin-metric-grid article{display:grid;min-height:130px;align-content:space-between;border:1px solid var(--admin-line);background:#fff;padding:1.25rem}
+.admin-metric-grid span{color:var(--admin-muted);font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.admin-metric-grid strong{font-family:Georgia,serif;font-size:2.25rem;font-weight:500}
+.admin-help-text{color:var(--admin-muted);font-size:.9rem}
+.admin-table-wrap{overflow-x:auto;border:1px solid var(--admin-line);background:#fff}
+.admin-table-wrap table{width:100%;border-collapse:collapse}
+.admin-table-wrap th,.admin-table-wrap td{border-bottom:1px solid var(--admin-line);padding:.9rem 1rem;text-align:start;vertical-align:top}
+.admin-table-wrap th{background:var(--admin-paper);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+.admin-table-wrap tr:last-child td{border-bottom:0}
+.admin-table-wrap a{color:#a8792f;font-weight:800}
+@media(max-width:900px){.admin-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.admin-shell{width:min(100% - 24px,1280px);padding-top:2rem}.admin-header{flex-direction:column}.admin-metric-grid{grid-template-columns:1fr}}
