@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\Admin\RfqController;
+use App\Http\Controllers\Admin\RfqReportController;
 use App\Http\Controllers\PublicContentController;
 use App\Http\Controllers\RfqSubmissionController;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +46,7 @@ Route::post('/rfq', RfqSubmissionController::class)
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): void {
     Route::resource('content-pages', ContentPageController::class)->except('show');
+    Route::get('rfqs/report', RfqReportController::class)->name('rfqs.report');
     Route::get('rfqs', [RfqController::class, 'index'])->name('rfqs.index');
     Route::get('rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
     Route::post(
