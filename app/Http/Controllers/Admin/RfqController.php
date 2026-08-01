@@ -9,7 +9,6 @@ use App\Http\Requests\StoreRfqNoteRequest;
 use App\Http\Requests\UpdateRfqStatusRequest;
 use App\Models\FormSubmission;
 use App\Models\RfqAttachment;
-use App\Models\RfqNote;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -147,7 +146,8 @@ final class RfqController extends Controller
         Request $request,
         FormSubmission $rfq,
         RfqAttachment $attachment,
-    ): StreamedResponse {
+    ): StreamedResponse
+    {
         abort_unless($request->user()?->can('rfq.manage'), 403);
         abort_unless($rfq->type === 'rfq', 404);
         abort_unless($attachment->form_submission_id === $rfq->getKey(), 404);
