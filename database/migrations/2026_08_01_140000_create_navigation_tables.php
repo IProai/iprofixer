@@ -22,7 +22,7 @@ return new class extends Migration
         Schema::create('navigation_items', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('navigation_menu_id')->constrained('navigation_menus')->cascadeOnDelete();
-            $table->foreignUuid('parent_id')->nullable()->constrained('navigation_items')->nullOnDelete();
+            $table->uuid('parent_id')->nullable();
             $table->string('label_en');
             $table->string('label_ar');
             $table->string('destination_type', 24)->default('internal_route');
@@ -37,10 +37,18 @@ return new class extends Migration
 
             $table->index(['navigation_menu_id', 'sort_order']);
         });
+
+        Schema::table('navigation_items', function (Blueprint $table): void {
+            $table->foreign('parent_id')->references('id')->on('navigation_items')->nullOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('navigation_items', function (Blueprint $table): void {
+            $table->dropForeign(['parent_id']);
+        });
+
         Schema::dropIfExists('navigation_items');
         Schema::dropIfExists('navigation_menus');
     }
