@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\FormSubmission;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 final class RfqReportController extends Controller
