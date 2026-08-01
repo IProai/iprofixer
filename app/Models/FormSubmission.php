@@ -61,6 +61,12 @@ final class FormSubmission extends Model
         return $this->hasMany(RfqAttachment::class);
     }
 
+    /** @return HasMany<RfqNote, $this> */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(RfqNote::class)->latest();
+    }
+
     /** @return BelongsTo<User, $this> */
     public function assignee(): BelongsTo
     {
