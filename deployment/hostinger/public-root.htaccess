@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block direct web access to sensitive Laravel and repository paths.
+    RewriteRule ^(?:app|bootstrap|config|database|deployment|node_modules|resources|routes|storage|tests|vendor)(?:/|$) - [F,L,NC]
+    RewriteRule ^(?:\.env|\.git|artisan|composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|vite\.config\.js)$ - [F,L,NC]
+
+    # Preserve ACME and other explicit well-known paths.
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+
+    # Send all application traffic to Laravel's public entry point.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+Options -Indexes
