@@ -5,10 +5,13 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\Admin\MediaAssetController;
 use App\Http\Controllers\Admin\NavigationController;
+use App\Http\Controllers\Admin\RedirectController;
 use App\Http\Controllers\Admin\RfqController;
 use App\Http\Controllers\Admin\RfqReportController;
 use App\Http\Controllers\PublicContentController;
 use App\Http\Controllers\RfqSubmissionController;
+use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +49,9 @@ Route::post('/rfq', RfqSubmissionController::class)
     ->middleware('throttle:5,1')
     ->name('rfq.store');
 
+Route::get('robots.txt', RobotsController::class)->name('robots');
+Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
+
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('content-pages/{content_page}/preview', [ContentPageController::class, 'preview'])->name('content-pages.preview');
     Route::post('content-pages/{content_page}/approve', [ContentPageController::class, 'approve'])->name('content-pages.approve');
@@ -61,6 +67,13 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::put('navigation/items/{item}', [NavigationController::class, 'updateItem'])->name('navigation.items.update');
     Route::post('navigation/items/{item}/toggle', [NavigationController::class, 'toggleItem'])->name('navigation.items.toggle');
     Route::delete('navigation/items/{item}', [NavigationController::class, 'destroyItem'])->name('navigation.items.destroy');
+    Route::get('redirects', [RedirectController::class, 'index'])->name('redirects.index');
+    Route::post('redirects', [RedirectController::class, 'store'])->name('redirects.store');
+    Route::get('redirects/{redirect}/edit', [RedirectController::class, 'edit'])->name('redirects.edit');
+    Route::put('redirects/{redirect}', [RedirectController::class, 'update'])->name('redirects.update');
+    Route::post('redirects/{redirect}/toggle', [RedirectController::class, 'toggle'])->name('redirects.toggle');
+    Route::delete('redirects/{redirect}', [RedirectController::class, 'destroy'])->name('redirects.destroy');
+    Route::post('redirects/test-resolution', [RedirectController::class, 'testResolution'])->name('redirects.test-resolution');
     Route::resource('media', MediaAssetController::class);
     Route::resource('content-pages', ContentPageController::class)->except('show');
     Route::get('rfqs/report', RfqReportController::class)->name('rfqs.report');

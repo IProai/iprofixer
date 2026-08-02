@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
+    @include('partials.seo-meta', ['page' => $cmsPage ?? null, 'isPreview' => $isPreview ?? false])
     @php
         $ar = app()->getLocale() === 'ar';
         $serviceDetails = [

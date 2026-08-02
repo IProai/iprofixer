@@ -31,6 +31,14 @@ final class CmsPermissionSeeder extends Seeder
         'navigation.edit',
         'navigation.publish',
         'navigation.delete',
+        'seo.view',
+        'seo.edit',
+        'seo.publish',
+        'redirects.view',
+        'redirects.create',
+        'redirects.edit',
+        'redirects.activate',
+        'redirects.delete',
     ];
 
     /** @var array<string, list<string>> */
@@ -44,6 +52,9 @@ final class CmsPermissionSeeder extends Seeder
             'media.edit',
             'navigation.view',
             'navigation.edit',
+            'seo.view',
+            'seo.edit',
+            'redirects.view',
         ],
         'Content Reviewer' => [
             'content.create',
@@ -55,6 +66,9 @@ final class CmsPermissionSeeder extends Seeder
             'media.edit',
             'navigation.view',
             'navigation.edit',
+            'seo.view',
+            'seo.edit',
+            'redirects.view',
         ],
         'Content Publisher' => [
             'content.create',
@@ -73,6 +87,13 @@ final class CmsPermissionSeeder extends Seeder
             'navigation.view',
             'navigation.edit',
             'navigation.publish',
+            'seo.view',
+            'seo.edit',
+            'seo.publish',
+            'redirects.view',
+            'redirects.create',
+            'redirects.edit',
+            'redirects.activate',
         ],
         'Content Administrator' => self::PERMISSIONS,
     ];

@@ -9,6 +9,7 @@ use App\Http\Requests\StoreContentPageRequest;
 use App\Http\Requests\UpdateContentPageRequest;
 use App\Models\ContentPage;
 use App\Models\ContentPageRevision;
+use App\Services\RedirectService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -118,7 +119,9 @@ final class ContentPageController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $validated, $contentPage): void {
+        $oldSlug = $contentPage->slug;
+
+        DB::transaction(function () use ($request, $validated, $contentPage, $oldSlug): void {
             $before = $contentPage->toArray();
 
             $scheduledFor = ! empty($validated['scheduled_for'])
@@ -136,6 +139,10 @@ final class ContentPageController extends Controller
 
             $this->persistTranslations($contentPage, $validated);
             $contentPage->refresh();
+
+            if ($oldSlug !== $contentPage->slug) {
+                app(RedirectService::class)->createAutoRedirect($contentPage, $oldSlug);
+            }
 
             $this->createRevision($contentPage, $request, 'Content updated.');
             $this->writeAudit($request, 'content.page.updated', $contentPage, $before, $contentPage->toArray());

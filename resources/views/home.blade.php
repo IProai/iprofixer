@@ -4,9 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
-    <meta name="description" content="{{ app()->getLocale() === 'ar' ? 'عناية متخصصة بأصول الضيافة للفنادق والمطاعم وفرق الفعاليات.' : 'Specialist hospitality asset care for hotels, restaurants and event operations.' }}">
-    <link rel="canonical" href="{{ route('home') }}">
-    <title>{{ app()->getLocale() === 'ar' ? 'آي برو فيكسر | عناية أذكى بأصول الضيافة' : 'IProFixer | Smarter Hospitality Asset Care' }}</title>
+    @include('partials.seo-meta')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>

@@ -19,6 +19,11 @@ final class ContentTranslation extends Model
         'seo_description',
         'canonical_url',
         'structured_data',
+        'og_title',
+        'og_description',
+        'og_image_id',
+        'is_noindex',
+        'is_nofollow',
         'translation_approved',
     ];
 
@@ -27,6 +32,8 @@ final class ContentTranslation extends Model
         return [
             'structured_data' => 'array',
             'translation_approved' => 'boolean',
+            'is_noindex' => 'boolean',
+            'is_nofollow' => 'boolean',
         ];
     }
 
@@ -34,5 +41,11 @@ final class ContentTranslation extends Model
     public function contentPage(): BelongsTo
     {
         return $this->belongsTo(ContentPage::class);
+    }
+
+    /** @return BelongsTo<MediaAsset, $this> */
+    public function ogImage(): BelongsTo
+    {
+        return $this->belongsTo(MediaAsset::class, 'og_image_id');
     }
 }
