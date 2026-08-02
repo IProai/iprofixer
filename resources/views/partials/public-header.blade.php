@@ -40,13 +40,11 @@
                         <a href="{{ $mItem['url'] }}" @if(!empty($mItem['target_blank'])) target="_blank" @endif>{{ $mItem['label'] }}</a>
                     @endforeach
                 @else
-                    <a href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a>
                     <a class="button button-gold" href="{{ route('contact') }}">{{ $ar ? 'اطلب تقييماً' : 'Request assessment' }}</a>
                 @endif
             </div>
         </nav>
         <div class="nav-actions">
-            <a class="portal-link" href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a>
             <form method="post" action="{{ route('locale.update', $ar ? 'en' : 'ar') }}">@csrf<button class="language-switch" type="submit" aria-label="{{ $ar ? 'Switch to English' : 'التبديل إلى العربية' }}">{{ $ar ? 'EN' : 'العربية' }}</button></form>
             <a class="button button-dark button-small" href="{{ route('contact') }}">{{ $ar ? 'اطلب تقييماً' : 'Request assessment' }}</a>
         </div>

@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('website')->nullable();
             $table->string('phone', 40)->nullable();
             $table->string('email')->nullable();
-            $table->jsonb('address')->nullable();
+            $table->json('address')->nullable();
             $table->string('duplicate_status', 24)->default('none'); // none, suspected, confirmed, overridden
             $table->uuid('duplicate_of_id')->nullable();
             $table->text('notes')->nullable();
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->foreignId('market_id')->nullable()->constrained('markets')->nullOnDelete();
             $table->string('name');
             $table->string('type', 40)->default('hotel'); // hotel, restaurant, catering, events, other
-            $table->jsonb('address')->nullable();
+            $table->json('address')->nullable();
             $table->string('phone', 40)->nullable();
             $table->text('notes')->nullable();
             $table->boolean('is_active')->default(true);

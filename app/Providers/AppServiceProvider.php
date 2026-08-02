@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,6 +14,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Runtime policies are added by bounded implementation packets.
+        // Force HTTPS scheme for URL generation in production (behind proxy/CDN).
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+        }
     }
 }

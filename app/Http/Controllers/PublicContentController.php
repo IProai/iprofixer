@@ -18,7 +18,7 @@ final class PublicContentController extends Controller
         'about' => 'about',
         'resources' => 'resources',
         'contact' => 'contact',
-        'portal' => 'portal',
+        // 'portal' intentionally disabled for V1 launch.
     ];
 
     /** @var array<string, list<string>> */

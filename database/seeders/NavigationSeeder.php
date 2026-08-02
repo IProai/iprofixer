@@ -35,7 +35,6 @@ final class NavigationSeeder extends Seeder
                     ['label_en' => 'Proof & Results', 'label_ar' => 'الإثبات والنتائج', 'route_name' => 'results'],
                     ['label_en' => 'About', 'label_ar' => 'عن الشركة', 'route_name' => 'about'],
                     ['label_en' => 'Resources', 'label_ar' => 'الموارد', 'route_name' => 'resources'],
-                    ['label_en' => 'Client portal', 'label_ar' => 'بوابة العملاء', 'route_name' => 'portal'],
                     ['label_en' => 'Request assessment', 'label_ar' => 'اطلب تقييماً', 'route_name' => 'contact'],
                 ],
             ],
@@ -54,7 +53,6 @@ final class NavigationSeeder extends Seeder
                 'name_ar' => 'ابدأ',
                 'items' => [
                     ['label_en' => 'Resources', 'label_ar' => 'الموارد', 'route_name' => 'resources'],
-                    ['label_en' => 'Client portal', 'label_ar' => 'بوابة العملاء', 'route_name' => 'portal'],
                     ['label_en' => 'Request assessment', 'label_ar' => 'طلب تقييم', 'route_name' => 'contact'],
                 ],
             ],

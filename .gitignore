@@ -38,3 +38,5 @@ Thumbs.db
 
 /an test
 /from GITHUB - Manual download/
+/deployment/release/*.zip
+

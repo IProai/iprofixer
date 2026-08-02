@@ -32,7 +32,6 @@
                 @endforeach
             @else
                 <a href="{{ route('resources') }}">{{ $ar ? 'الموارد' : 'Resources' }}</a>
-                <a href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a>
                 <a href="{{ route('contact') }}">{{ $ar ? 'طلب تقييم' : 'Request assessment' }}</a>
             @endif
         </div>

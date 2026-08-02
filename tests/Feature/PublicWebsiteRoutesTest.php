@@ -29,8 +29,11 @@ it('serves every revenue-critical public page in English', function (string $uri
     ['/about', 'About IProFixer'],
     ['/resources', 'Resources'],
     ['/contact', 'Start a consultation'],
-    ['/portal', 'Client portal'],
 ]);
+
+it('returns 404 for disabled client portal route in V1', function (): void {
+    $this->get('/portal')->assertNotFound();
+});
 
 it('switches the public website to Arabic with right-to-left output', function (): void {
     $this->from('/')->post('/locale/ar')->assertRedirect('/');

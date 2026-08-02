@@ -103,7 +103,7 @@ final class NavigationItem extends Model
                 'about' => route('about'),
                 'resources' => route('resources'),
                 'contact' => route('contact'),
-                'portal' => route('portal'),
+                'portal' => Route::has('portal') ? route('portal') : '#',
                 default => '#',
             };
         }

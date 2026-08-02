@@ -23,7 +23,6 @@
             <a href="{{ route('about') }}">{{ $ar ? 'عن الشركة' : 'About' }}</a>
         </nav>
         <div class="nav-actions">
-            <a class="portal-link" href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a>
             <form method="post" action="{{ route('locale.update', $ar ? 'en' : 'ar') }}">@csrf<button class="language-switch" type="submit">{{ $ar ? 'EN' : 'العربية' }}</button></form>
             <a class="button button-dark button-small" href="{{ route('contact') }}">{{ $ar ? 'اطلب تقييماً' : 'Request assessment' }}</a>
         </div>
@@ -87,6 +86,6 @@
     </section>
 </main>
 
-<footer class="site-footer"><div class="container footer-grid"><div><a class="brand footer-brand" href="{{ route('home') }}"><span class="brand-symbol">I</span><span>IProFixer</span></a><p>{{ $ar ? 'عناية متخصصة بأصول الضيافة.' : 'Specialist hospitality asset care.' }}</p></div><div><a href="{{ route('services') }}">{{ $ar ? 'الخدمات' : 'Services' }}</a><a href="{{ route('industries') }}">{{ $ar ? 'القطاعات' : 'Industries' }}</a><a href="{{ route('process') }}">{{ $ar ? 'آلية العمل' : 'Process' }}</a></div><div><a href="{{ route('resources') }}">{{ $ar ? 'الموارد' : 'Resources' }}</a><a href="{{ route('portal') }}">{{ $ar ? 'بوابة العملاء' : 'Client portal' }}</a><a href="{{ route('contact') }}">{{ $ar ? 'تواصل معنا' : 'Contact' }}</a></div></div><div class="container footer-bottom"><span>© {{ date('Y') }} IProFixer</span><span>{{ $ar ? 'لا ادعاءات أو نتائج غير موثقة.' : 'No unverified claims or fabricated proof.' }}</span></div></footer>
+<footer class="site-footer"><div class="container footer-grid"><div><a class="brand footer-brand" href="{{ route('home') }}"><span class="brand-symbol">I</span><span>IProFixer</span></a><p>{{ $ar ? 'عناية متخصصة بأصول الضيافة.' : 'Specialist hospitality asset care.' }}</p></div><div><a href="{{ route('services') }}">{{ $ar ? 'الخدمات' : 'Services' }}</a><a href="{{ route('industries') }}">{{ $ar ? 'القطاعات' : 'Industries' }}</a><a href="{{ route('process') }}">{{ $ar ? 'آلية العمل' : 'Process' }}</a></div><div><a href="{{ route('resources') }}">{{ $ar ? 'الموارد' : 'Resources' }}</a><a href="{{ route('contact') }}">{{ $ar ? 'تواصل معنا' : 'Contact' }}</a></div></div><div class="container footer-bottom"><span>© {{ date('Y') }} IProFixer</span><span>{{ $ar ? 'لا ادعاءات أو نتائج غير موثقة.' : 'No unverified claims or fabricated proof.' }}</span></div></footer>
 </body>
 </html>

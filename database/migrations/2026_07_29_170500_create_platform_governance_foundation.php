@@ -56,7 +56,7 @@ return new class extends Migration
             $table->string('registration_number')->nullable();
             $table->string('tax_registration_number')->nullable();
             $table->string('currency_code', 3);
-            $table->jsonb('address')->nullable();
+            $table->json('address')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestampsTz();
         });
@@ -66,7 +66,7 @@ return new class extends Migration
             $table->foreignId('legal_entity_id')->constrained()->cascadeOnDelete();
             $table->string('code');
             $table->decimal('rate', 8, 4)->default(0);
-            $table->jsonb('configuration')->nullable();
+            $table->json('configuration')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestampsTz();
             $table->unique(['legal_entity_id', 'code']);
@@ -77,7 +77,7 @@ return new class extends Migration
             $table->string('scope_type', 32)->default('global');
             $table->unsignedBigInteger('scope_id')->nullable();
             $table->string('key');
-            $table->jsonb('value')->nullable();
+            $table->json('value')->nullable();
             $table->boolean('is_secret')->default(false);
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestampsTz();
@@ -93,9 +93,9 @@ return new class extends Migration
             $table->uuid('correlation_id')->index();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
-            $table->jsonb('before')->nullable();
-            $table->jsonb('after')->nullable();
-            $table->jsonb('metadata')->nullable();
+            $table->json('before')->nullable();
+            $table->json('after')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestampTz('occurred_at')->useCurrent();
             $table->index(['subject_type', 'subject_id']);
         });
@@ -124,7 +124,7 @@ return new class extends Migration
             $table->string('seo_title')->nullable();
             $table->text('seo_description')->nullable();
             $table->string('canonical_url')->nullable();
-            $table->jsonb('structured_data')->nullable();
+            $table->json('structured_data')->nullable();
             $table->boolean('translation_approved')->default(false);
             $table->timestampsTz();
             $table->unique(['content_page_id', 'locale']);
@@ -158,7 +158,7 @@ return new class extends Migration
             $table->string('title_ar');
             $table->text('description_en')->nullable();
             $table->text('description_ar')->nullable();
-            $table->jsonb('evidence')->nullable();
+            $table->json('evidence')->nullable();
             $table->foreignUuid('media_asset_id')->nullable()->constrained('media_assets')->nullOnDelete();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestampTz('approved_at')->nullable();
@@ -183,7 +183,7 @@ return new class extends Migration
             $table->string('urgency')->nullable();
             $table->unsignedInteger('estimated_quantity')->nullable();
             $table->text('message')->nullable();
-            $table->jsonb('payload')->nullable();
+            $table->json('payload')->nullable();
             $table->uuid('correlation_id')->index();
             $table->string('ip_hash', 64)->nullable();
             $table->timestampTz('submitted_at')->useCurrent();

@@ -31,7 +31,7 @@ Route::get('/results', [PublicContentController::class, 'page'])->defaults('page
 Route::get('/about', [PublicContentController::class, 'page'])->defaults('page', 'about')->name('about');
 Route::get('/resources', [PublicContentController::class, 'page'])->defaults('page', 'resources')->name('resources');
 Route::get('/contact', [PublicContentController::class, 'page'])->defaults('page', 'contact')->name('contact');
-Route::get('/portal', [PublicContentController::class, 'page'])->defaults('page', 'portal')->name('portal');
+// Client portal is deferred. Route intentionally disabled for V1.
 
 Route::get('/services/{service}', [PublicContentController::class, 'service'])
     ->whereIn('service', [
