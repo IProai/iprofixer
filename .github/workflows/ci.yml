@@ -10,7 +10,7 @@ on:
       - agent/**
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -50,11 +50,30 @@ jobs:
       - name: Prepare runtime directories
         run: mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 
+      - name: Detect dependency lock state
+        id: lock_state
+        shell: bash
+        run: |
+          if [[ -f composer.lock ]]; then
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate Composer manifest
         run: composer validate --strict
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Capture generated dependency lock
+        if: steps.lock_state.outputs.missing == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-lock
+          path: composer.lock
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
@@ -99,3 +118,13 @@ jobs:
           DB_DATABASE: iprofixer_test
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
+
+      - name: Commit generated Composer lock
+        if: github.event_name == 'push' && steps.lock_state.outputs.missing == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add composer.lock
+          git commit -m "build: commit resolved Composer dependencies"
+          git push
