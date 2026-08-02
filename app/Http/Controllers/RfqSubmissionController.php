@@ -8,6 +8,7 @@ use App\Http\Requests\StoreRfqRequest;
 use App\Models\FormSubmission;
 use App\Notifications\NewRfqOperationsNotification;
 use App\Notifications\RfqReceivedNotification;
+use App\Services\LeadService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -117,6 +118,7 @@ final class RfqSubmissionController
         }
 
         $this->sendNotifications($submission, $locale);
+        $this->createLeadFromSubmission($submission);
 
         return back()->with('rfq_submitted', $reference);
     }
@@ -139,6 +141,19 @@ final class RfqSubmissionController
             Log::warning('RFQ notification delivery failed.', [
                 'reference' => $submission->reference,
                 'exception' => $exception::class,
+            ]);
+        }
+    }
+
+    private function createLeadFromSubmission(FormSubmission $submission): void
+    {
+        try {
+            app(LeadService::class)->createFromRfq($submission);
+        } catch (Throwable $exception) {
+            Log::warning('RFQ lead creation failed — submission preserved.', [
+                'form_submission_id' => $submission->id,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
             ]);
         }
     }

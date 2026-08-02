@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\ContentPageController;
+use App\Http\Controllers\Admin\LeadController;
 use App\Http\Controllers\Admin\MediaAssetController;
 use App\Http\Controllers\Admin\NavigationController;
+use App\Http\Controllers\Admin\OpportunityController;
+use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\RedirectController;
 use App\Http\Controllers\Admin\RfqController;
 use App\Http\Controllers\Admin\RfqReportController;
@@ -86,6 +90,21 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('rfqs/{rfq}/attachments/{attachment}', [RfqController::class, 'downloadAttachment'])
         ->name('rfqs.attachments.download');
     Route::put('rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
+
+    // Commercial Workspace (CRM)
+    Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
+    Route::get('leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
+    Route::post('leads/{lead}/qualify', [LeadController::class, 'qualify'])->name('leads.qualify');
+    Route::post('leads/{lead}/disqualify', [LeadController::class, 'disqualify'])->name('leads.disqualify');
+    Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
+
+    Route::get('opportunities', [OpportunityController::class, 'index'])->name('opportunities.index');
+    Route::get('opportunities/{opportunity}', [OpportunityController::class, 'show'])->name('opportunities.show');
+    Route::post('opportunities/{opportunity}/stage', [OpportunityController::class, 'updateStage'])->name('opportunities.stage');
+
+    Route::get('organizations/check-duplicates', [OrganizationController::class, 'checkDuplicates'])->name('organizations.check-duplicates');
+    Route::resource('organizations', OrganizationController::class)->only(['index', 'show', 'store']);
+    Route::resource('contacts', ContactController::class)->only(['index', 'show', 'store']);
 });
 
 Route::get('/health', function (): JsonResponse {
