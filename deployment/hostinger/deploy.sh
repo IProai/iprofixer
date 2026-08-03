@@ -66,7 +66,16 @@ restore_previous_release() {
         mv "$WEB_PATH/build.rollback" "$WEB_PATH/build"
     fi
 
+    if [[ -d "$BACKUP_PATH/application-public-build" ]]; then
+        rm -rf "$APP_PATH/public/build.rollback"
+        mkdir -p "$APP_PATH/public"
+        cp -a "$BACKUP_PATH/application-public-build" "$APP_PATH/public/build.rollback"
+        rm -rf "$APP_PATH/public/build"
+        mv "$APP_PATH/public/build.rollback" "$APP_PATH/public/build"
+    fi
+
     mkdir -p "$APP_PATH/bootstrap/cache" "$APP_PATH/storage/framework/cache" "$APP_PATH/storage/framework/sessions" "$APP_PATH/storage/framework/views" "$APP_PATH/storage/logs"
+    rm -f "$APP_PATH/storage/framework/views"/*.php || true
     "$PHP_BIN" "$APP_PATH/artisan" optimize:clear >/dev/null 2>&1 || true
     "$PHP_BIN" "$APP_PATH/artisan" optimize >/dev/null 2>&1 || true
     "$PHP_BIN" "$APP_PATH/artisan" up >/dev/null 2>&1 || true
@@ -112,6 +121,10 @@ if [[ -d "$WEB_PATH/build" ]]; then
     cp -a "$WEB_PATH/build" "$BACKUP_PATH/public-build"
 fi
 
+if [[ -d "$APP_PATH/public/build" ]]; then
+    cp -a "$APP_PATH/public/build" "$BACKUP_PATH/application-public-build"
+fi
+
 log "Putting the application into maintenance mode."
 "$PHP_BIN" "$APP_PATH/artisan" down --retry=30 || true
 
@@ -123,7 +136,7 @@ rsync -a --delete \
     --exclude='bootstrap/cache/' \
     "$RELEASE_DIR/" "$APP_PATH/"
 
-mkdir -p "$APP_PATH/bootstrap/cache" "$APP_PATH/storage/framework/cache" "$APP_PATH/storage/framework/sessions" "$APP_PATH/storage/framework/views" "$APP_PATH/storage/logs"
+mkdir -p "$APP_PATH/bootstrap/cache" "$APP_PATH/storage/framework/cache" "$APP_PATH/storage/framework/sessions" "$APP_PATH/storage/framework/views" "$APP_PATH/storage/logs" "$APP_PATH/public"
 chmod -R ug+rwX "$APP_PATH/bootstrap/cache" "$APP_PATH/storage"
 
 log "Synchronizing non-entrypoint public assets."
@@ -134,13 +147,13 @@ rsync -a --delete \
     --exclude='build/' \
     "$RELEASE_DIR/public/" "$WEB_PATH/"
 
-log "Preparing compiled public assets."
-rm -rf "$WEB_PATH/build.next"
+log "Preparing matching Laravel and web-root build manifests."
+rm -rf "$WEB_PATH/build.next" "$APP_PATH/public/build.next"
 cp -a "$RELEASE_DIR/public/build" "$WEB_PATH/build.next"
+cp -a "$RELEASE_DIR/public/build" "$APP_PATH/public/build.next"
 require_file "$WEB_PATH/build.next/manifest.json"
-
-log "Clearing stale Laravel caches."
-"$PHP_BIN" "$APP_PATH/artisan" optimize:clear
+require_file "$APP_PATH/public/build.next/manifest.json"
+cmp -s "$WEB_PATH/build.next/manifest.json" "$APP_PATH/public/build.next/manifest.json"
 
 if [[ "$RUN_MIGRATIONS" == true ]]; then
     log "Running production database migrations."
@@ -152,23 +165,39 @@ fi
 log "Ensuring governed production permissions."
 "$PHP_BIN" "$APP_PATH/artisan" db:seed --class=ProductionAccessSeeder --force
 
-log "Building production caches."
-"$PHP_BIN" "$APP_PATH/artisan" optimize
-
-log "Atomically switching compiled public assets."
-rm -rf "$WEB_PATH/build.previous"
+log "Atomically switching both compiled build locations."
+rm -rf "$WEB_PATH/build.previous" "$APP_PATH/public/build.previous"
 if [[ -d "$WEB_PATH/build" ]]; then
     mv "$WEB_PATH/build" "$WEB_PATH/build.previous"
 fi
+if [[ -d "$APP_PATH/public/build" ]]; then
+    mv "$APP_PATH/public/build" "$APP_PATH/public/build.previous"
+fi
 mv "$WEB_PATH/build.next" "$WEB_PATH/build"
+mv "$APP_PATH/public/build.next" "$APP_PATH/public/build"
+
+log "Clearing stale views and rebuilding Laravel caches against the new manifest."
+rm -f "$APP_PATH/storage/framework/views"/*.php || true
+"$PHP_BIN" "$APP_PATH/artisan" optimize:clear
+"$PHP_BIN" "$APP_PATH/artisan" optimize
 
 log "Returning the application to service."
 "$PHP_BIN" "$APP_PATH/artisan" up
 
-log "Running live health checks."
+log "Running live health and asset-manifest checks."
 curl --fail --silent --show-error --retry 5 --retry-delay 3 "$APP_URL/health" >/dev/null
 curl --fail --silent --show-error --retry 5 --retry-delay 3 "$APP_URL/ready" >/dev/null
 curl --fail --silent --show-error --retry 5 --retry-delay 3 "$APP_URL/login" >/dev/null
+
+app_css=$("$PHP_BIN" -r '$m=json_decode(file_get_contents($argv[1]), true); echo $m["resources/css/app.css"]["file"] ?? "";' "$APP_PATH/public/build/manifest.json")
+app_js=$("$PHP_BIN" -r '$m=json_decode(file_get_contents($argv[1]), true); echo $m["resources/js/app.js"]["file"] ?? "";' "$APP_PATH/public/build/manifest.json")
+[[ -n "$app_css" && -n "$app_js" ]]
+
+home_html=$(curl --fail --silent --show-error --retry 5 --retry-delay 3 "$APP_URL/")
+grep -Fq "/build/$app_css" <<<"$home_html"
+grep -Fq "/build/$app_js" <<<"$home_html"
+curl --fail --silent --show-error --head "$APP_URL/build/$app_css" >/dev/null
+curl --fail --silent --show-error --head "$APP_URL/build/$app_js" >/dev/null
 
 trap - ERR
 log "Deployment succeeded for $RELEASE_SHA."
