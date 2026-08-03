@@ -1,180 +1,116 @@
-# IProFixer Hostinger Release Pack
+# IProFixer Hostinger Production Pipeline
 
-This directory is the controlled deployment source for Hostinger preview and production releases. Deployment is not accepted merely because repository files were copied or a page returned HTTP 200.
+## Purpose
 
-## Non-negotiable rules
-
-1. GitHub remains the source of truth.
-2. Deploy only a named commit whose CI result is green.
-3. Never commit `.env`, credentials, API keys, application keys, database exports, or customer files.
-4. The real runtime `.env` is created inside Hostinger from `.env.hostinger.example` and retained outside Git.
-5. `APP_DEBUG` stays `false` on every internet-accessible environment.
-6. Migrations, bootstrap users, mail, uploads, permissions, health checks, backup and rollback must be verified before acceptance.
-7. Preview data is disposable and must not be mixed with production data.
-
-## Required release contents
-
-A deployable release must contain:
-
-- Laravel application source.
-- `vendor/` produced from the committed `composer.lock` using production Composer options.
-- `public/build/manifest.json` and hashed Vite assets produced from the committed `package-lock.json`.
-- Root `.htaccess` copied from `deployment/hostinger/public-root.htaccess`.
-- Laravel's existing `public/.htaccess`.
-- Writable Laravel runtime directories under `storage/` and `bootstrap/cache/`.
-- A real `.env` created from `.env.hostinger.example` with unique secrets and the correct environment database.
-
-## Release artifact build
-
-Build from a clean checkout of the exact green commit. The resulting artifact must exclude development-only and secret-bearing material while retaining runtime dependencies and compiled assets.
-
-Recommended build commands on a machine with PHP, Composer and Node:
-
-```bash
-composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
-npm ci
-npm run build
-php artisan test
-```
-
-Before packaging, confirm:
+This pipeline deploys the Laravel application to the existing split Hostinger layout:
 
 ```text
-composer.lock exists
-package-lock.json exists
-vendor/autoload.php exists
-public/build/manifest.json exists
-public/index.php exists
-public/.htaccess exists
-storage/framework/cache exists
-storage/framework/sessions exists
-storage/framework/views exists
-storage/logs exists
-bootstrap/cache exists
+/home/u434649687/domains/iprofixer.com/
+├── iprofixer_app/   # Laravel application, production .env, persistent storage
+└── public_html/     # public index.php, .htaccess, storage link, compiled assets
 ```
 
-Do not include a real `.env` in the artifact.
+It deliberately does **not** use Hostinger's direct Git-to-web-root deployment. That feature cannot safely manage the split application/public layout.
 
-## Hostinger file layout
+## Safety model
 
-The Laravel project is deployed under the website's `public_html` directory because the current hosting flow serves that directory. Copy `public-root.htaccess` to `public_html/.htaccess`. It routes browser traffic into `public/` and blocks direct access to sensitive project paths.
+- Manual GitHub Actions dispatch only.
+- Optional GitHub production-environment approval.
+- Exact `main` commit is validated, built, packaged and checksummed.
+- Full backend tests and frontend build run before upload.
+- `vendor/` and `public/build/` are generated in GitHub Actions, not on Hostinger.
+- Production `.env`, `storage/`, uploads, public entrypoint and storage link remain persistent.
+- Existing application code and public assets are backed up before change.
+- Deployments are serialized with a server lock.
+- Vite assets are switched atomically.
+- `/health`, `/ready`, and `/login` are verified after deployment.
+- Any failed command or smoke check triggers automatic rollback.
+- The five newest rollback backups are retained.
 
-Expected structure:
+## Required GitHub environment and secrets
+
+Create a GitHub Environment named `production`. Enable required reviewers if the repository plan supports them.
+
+Add these environment secrets:
+
+| Secret | Production value |
+|---|---|
+| `HOSTINGER_HOST` | Hostinger SSH host/IP, currently `45.84.207.235` |
+| `HOSTINGER_PORT` | Hostinger SSH port, currently `65002` |
+| `HOSTINGER_USER` | Hostinger SSH user, currently `u434649687` |
+| `HOSTINGER_BASE_PATH` | `/home/u434649687/domains/iprofixer.com` |
+| `HOSTINGER_SSH_PRIVATE_KEY` | Dedicated private deployment key |
+| `HOSTINGER_KNOWN_HOSTS` | Verified SSH known-hosts line |
+| `PRODUCTION_APP_URL` | `https://iprofixer.com` |
+
+## One-time SSH-key setup
+
+Generate a deployment-only key on a trusted local computer:
+
+```powershell
+ssh-keygen -t ed25519 -C "iprofixer-github-deploy" -f "$HOME\.ssh\iprofixer_github_deploy"
+```
+
+Use no passphrase because GitHub Actions must use the key non-interactively. Restrict this key to the Hostinger account and rotate it if exposure is suspected.
+
+- Add `iprofixer_github_deploy.pub` in Hostinger under **SSH Access → SSH keys**.
+- Add the private key contents from `iprofixer_github_deploy` to `HOSTINGER_SSH_PRIVATE_KEY`.
+- Obtain the server host key:
+
+```powershell
+ssh-keyscan -p 65002 45.84.207.235
+```
+
+Verify the fingerprint through Hostinger or another trusted channel before saving the complete line as `HOSTINGER_KNOWN_HOSTS`.
+
+## First production deployment
+
+1. Merge the deployment-pipeline pull request into `main` after green CI.
+2. Open **GitHub → Actions → Deploy production**.
+3. Select **Run workflow** on `main`.
+4. Enter `DEPLOY` exactly.
+5. Leave **Run pending database migrations** disabled unless the release explicitly includes approved migrations.
+6. Approve the `production` environment if required.
+7. Watch validation, packaging, upload, backup, deployment and live smoke checks.
+8. Accept the release only after checking the public website, Arabic, RFQ submission and admin workspace.
+
+## Normal future deployment
+
+1. Merge an approved green PR into `main`.
+2. Run **Deploy production** manually.
+3. Enable migrations only when the release contract requires them.
+4. Verify the workflow evidence and live smoke tests.
+
+## Persistent production state
+
+The deployer never overwrites:
+
+- `iprofixer_app/.env`
+- `iprofixer_app/storage/`
+- uploaded/private media
+- `public_html/index.php`
+- `public_html/.htaccess`
+- `public_html/storage`
+
+No production credentials or customer data belong in Git or release artifacts.
+
+## Rollback and evidence
+
+Server backups are stored under:
 
 ```text
-public_html/
-  .env                       # created on Hostinger; never in Git
-  .htaccess                  # copied from public-root.htaccess
-  app/
-  bootstrap/
-  config/
-  database/
-  public/
-    .htaccess
-    index.php
-    build/
-  resources/
-  routes/
-  storage/
-  vendor/
-  artisan
-  composer.json
-  composer.lock
+/home/u434649687/domains/iprofixer.com/.deploy/backups/
 ```
 
-## Runtime environment
+Each backup includes the previous application code, runtime dependencies, non-entrypoint public assets and Vite build. A failed deployment restores these automatically and returns Laravel from maintenance mode.
 
-Create `public_html/.env` from `.env.hostinger.example` and replace every placeholder. Generate a unique Laravel `APP_KEY` on a trusted machine using:
+The GitHub workflow also stores the release checksum as a 30-day artifact.
 
-```bash
-php artisan key:generate --show
-```
+## Production invariants
 
-Paste only the generated `base64:` value into Hostinger's `.env`. Do not send it through chat, email or commit history.
-
-Preview defaults intentionally use:
-
-- file sessions;
-- file cache;
-- synchronous queues;
-- log mail transport.
-
-This removes hidden worker and database-table dependencies while the preview is being validated. Production changes require separate proof.
-
-## Database gate
-
-Provision a dedicated Hostinger database for the environment. Populate only the deployed `.env` with its credentials. Database acceptance requires:
-
-- connection succeeds;
-- all migrations run against the intended database;
-- migration status contains no pending migration;
-- required roles and permissions are seeded through the governed bootstrap process;
-- no local, test or another environment's data is present.
-
-Never upload a developer database as a substitute for migrations and seeds.
-
-## Writable-directory gate
-
-The web/PHP process must be able to write to:
-
-```text
-storage/app
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
-storage/logs
-bootstrap/cache
-```
-
-Do not make the complete project world-writable. Fix only the required runtime directories using the least-permissive setting supported by the hosting plan.
-
-## Deployment acceptance checks
-
-Every release must pass all of the following:
-
-1. Home page loads over HTTPS without debug output.
-2. English and Arabic pages render; Arabic uses true RTL.
-3. Compiled CSS and JavaScript load from hashed files in `public/build`.
-4. `/health` and `/ready` return the expected non-secret status.
-5. Public RFQ validation rejects invalid requests.
-6. A valid RFQ persists once, produces a reference, records consent and does not expose private attachments.
-7. Authentication works and unauthorized users cannot access CMS, RFQ administration or attachments.
-8. Authorized operators can use the implemented CMS/RFQ functions.
-9. Logs contain no missing-key, missing-manifest, permission or database exceptions.
-10. `APP_DEBUG=false` is confirmed.
-11. Backup and rollback points exist before migration or release replacement.
-
-## Rollback
-
-Before each deployment retain:
-
-- the previously accepted release archive;
-- the previous green commit SHA;
-- a database backup taken before migrations;
-- the deployed `.env` outside the release archive;
-- uploaded/private storage required by the environment.
-
-Rollback means restoring the previous release files and compatible database state, then repeating the smoke checks. Never overwrite the only known-good release.
-
-## No-SSH hosting constraint
-
-The deployment must not assume terminal or SSH access. Anything required at runtime must be one of:
-
-- already present in the prepared release artifact;
-- configurable through Hostinger's file/database/control-panel interfaces;
-- executed through a deliberately designed, authenticated, single-use deployment mechanism that is removed immediately after use and separately security-reviewed.
-
-No ad-hoc public PHP command runner is allowed.
-
-## Current known incident captured
-
-The first preview attempt copied application files but did not contain a real `.env`, so Laravel had no `APP_KEY` and returned HTTP 500. This pack prevents recurrence by making the runtime environment, compiled assets, dependencies, rewrite rules and acceptance checks explicit release inputs.
-
-## Media Library Storage & Backup Governance
-
-1. **Storage Directory Permissions**: Ensure `storage/app/public/media` directory has write permissions (`755`).
-2. **Symlink Behavior**: Execute `php artisan storage:link` or verify Hostinger web server maps `public/storage` to `storage/app/public`.
-3. **Media Backup Policy**:
-   - `storage/app/public/media` contains customer and governed media uploads and must NEVER be committed to Git.
-   - Backup `storage/app/public/` during routine backup procedures alongside database snapshots.
-   - Restoring media requires restoring file paths to match `media_assets` table `disk` and `path` values.
+- GitHub `main` is the authoritative code source.
+- Deploy only a green named commit.
+- Do not point Hostinger direct Git deployment at `public_html` or `iprofixer_app`.
+- Do not run Composer or Node builds on shared hosting.
+- Do not enable production migrations casually.
+- Do not bypass the workflow with File Manager folder replacement.

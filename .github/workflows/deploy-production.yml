@@ -1,0 +1,206 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DEPLOY to confirm production deployment
+        required: true
+        type: string
+      run_migrations:
+        description: Run pending database migrations
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iprofixer-production
+  cancel-in-progress: false
+
+jobs:
+  validate-build-deploy:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY'
+    runs-on: ubuntu-latest
+    environment: production
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: iprofixer_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d iprofixer_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DEPLOY_SHA: ${{ github.sha }}
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+      HOSTINGER_BASE_PATH: ${{ secrets.HOSTINGER_BASE_PATH }}
+      APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+
+    steps:
+      - name: Checkout exact main commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pgsql, pdo_pgsql, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Prepare test runtime
+        run: |
+          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+          cp .env.example .env
+          composer validate --strict
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci --no-audit --no-fund
+          php artisan key:generate
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: iprofixer_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+      - name: Quality gate
+        run: |
+          composer lint
+          npm run format
+          npm run build
+          php artisan migrate --force
+          composer test
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: iprofixer_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+
+      - name: Build production runtime package
+        shell: bash
+        run: |
+          composer install \
+            --no-dev \
+            --no-interaction \
+            --prefer-dist \
+            --no-progress \
+            --classmap-authoritative
+
+          rm -rf .release
+          mkdir -p .release
+
+          rsync -a \
+            --exclude='.env' \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.release/' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            --exclude='docs/' \
+            --exclude='execution_packets/' \
+            --exclude='source_of_truth/' \
+            --exclude='storage/' \
+            --exclude='bootstrap/cache/*' \
+            ./ .release/
+
+          mkdir -p .release/storage/framework/cache .release/storage/framework/sessions .release/storage/framework/views .release/storage/logs .release/bootstrap/cache
+          tar -czf "iprofixer-${DEPLOY_SHA}.tar.gz" -C .release .
+          sha256sum "iprofixer-${DEPLOY_SHA}.tar.gz" > "iprofixer-${DEPLOY_SHA}.sha256"
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          test -n "$HOSTINGER_HOST"
+          test -n "$HOSTINGER_PORT"
+          test -n "$HOSTINGER_USER"
+          test -n "$HOSTINGER_BASE_PATH"
+          test -n "$APP_URL"
+          test -n "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}"
+          test -n "${{ secrets.HOSTINGER_KNOWN_HOSTS }}"
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' '${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}' > ~/.ssh/iprofixer_deploy
+          chmod 600 ~/.ssh/iprofixer_deploy
+          printf '%s\n' '${{ secrets.HOSTINGER_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload immutable release
+        shell: bash
+        run: |
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes"
+          SCP="scp -i ~/.ssh/iprofixer_deploy -P ${HOSTINGER_PORT} -o BatchMode=yes"
+          REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
+
+          $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" "mkdir -p '${REMOTE_INCOMING}'"
+          $SCP "iprofixer-${DEPLOY_SHA}.tar.gz" "iprofixer-${DEPLOY_SHA}.sha256" "${HOSTINGER_USER}@${HOSTINGER_HOST}:${REMOTE_INCOMING}/"
+
+      - name: Verify and deploy on Hostinger
+        shell: bash
+        run: |
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes"
+          REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
+          MIGRATIONS="${{ inputs.run_migrations }}"
+
+          $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" bash -s -- \
+            "$REMOTE_INCOMING" \
+            "$DEPLOY_SHA" \
+            "$MIGRATIONS" \
+            "$HOSTINGER_BASE_PATH" \
+            "$APP_URL" <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+
+          incoming="$1"
+          sha="$2"
+          migrations="$3"
+          base="$4"
+          app_url="$5"
+          release="$incoming/release"
+
+          cd "$incoming"
+          sha256sum -c "iprofixer-${sha}.sha256"
+          rm -rf "$release"
+          mkdir -p "$release"
+          tar -xzf "iprofixer-${sha}.tar.gz" -C "$release"
+          chmod +x "$release/deployment/hostinger/deploy.sh"
+
+          HOSTINGER_BASE_PATH="$base" \
+          HOSTINGER_PHP_BIN="/opt/alt/php84/usr/bin/php" \
+          APP_URL="$app_url" \
+            "$release/deployment/hostinger/deploy.sh" "$release" "$sha" "$migrations"
+          REMOTE_SCRIPT
+
+      - name: Publish release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-release-${{ github.sha }}
+          path: |
+            iprofixer-${{ github.sha }}.sha256
+          if-no-files-found: error
+          retention-days: 30
