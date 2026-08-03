@@ -28,7 +28,7 @@ permissions:
 
 concurrency:
   group: iprofixer-production
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate-build-deploy:
@@ -112,16 +112,9 @@ jobs:
       - name: Build production runtime package
         shell: bash
         run: |
-          composer install \
-            --no-dev \
-            --no-interaction \
-            --prefer-dist \
-            --no-progress \
-            --classmap-authoritative
-
+          composer install --no-dev --no-interaction --prefer-dist --no-progress --classmap-authoritative
           rm -rf .release
           mkdir -p .release
-
           rsync -a \
             --exclude='.env' \
             --exclude='.git/' \
@@ -135,7 +128,6 @@ jobs:
             --exclude='storage/' \
             --exclude='bootstrap/cache/*' \
             ./ .release/
-
           mkdir -p .release/storage/framework/cache .release/storage/framework/sessions .release/storage/framework/views .release/storage/logs .release/bootstrap/cache
           tar -czf "iprofixer-${DEPLOY_SHA}.tar.gz" -C .release .
           sha256sum "iprofixer-${DEPLOY_SHA}.tar.gz" > "iprofixer-${DEPLOY_SHA}.sha256"
@@ -164,20 +156,14 @@ jobs:
             cat "$raw_key" > "$key_file"
             printf '\n' >> "$key_file"
           else
-            if ! base64 --decode "$raw_key" > "$key_file" 2>/dev/null; then
-              echo 'HOSTINGER_SSH_PRIVATE_KEY is neither a raw private key nor valid base64 key material.' >&2
-              exit 1
-            fi
+            base64 --decode "$raw_key" > "$key_file"
             tr -d '\r' < "$key_file" > "${key_file}.normalized"
             mv "${key_file}.normalized" "$key_file"
             printf '\n' >> "$key_file"
           fi
           rm -f "$raw_key"
           chmod 600 "$key_file"
-          if ! ssh-keygen -y -f "$key_file" >/dev/null 2>&1; then
-            echo 'HOSTINGER_SSH_PRIVATE_KEY is not a valid unencrypted OpenSSH private key.' >&2
-            exit 1
-          fi
+          ssh-keygen -y -f "$key_file" >/dev/null
           timeout 20 ssh-keyscan -p "$HOSTINGER_PORT" -t ed25519,ecdsa,rsa "$HOSTINGER_HOST" 2>/dev/null > ~/.ssh/known_hosts
           test -s ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
@@ -219,7 +205,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: production-release-${{ github.sha }}
-          path: |
-            iprofixer-${{ github.sha }}.sha256
+          path: iprofixer-${{ github.sha }}.sha256
           if-no-files-found: error
           retention-days: 30
