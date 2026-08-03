@@ -1,5 +1,6 @@
 import './bootstrap';
 import '../css/experience.css';
+import '../css/page-visuals.css';
 import './experience';
 
 const documentRoot = document.documentElement;
