@@ -33,7 +33,6 @@ restore_previous_release() {
     ROLLBACK_ACTIVE=true
 
     log "Deployment failed. Restoring the previous application and public assets."
-
     "$PHP_BIN" "$APP_PATH/artisan" down --retry=30 >/dev/null 2>&1 || true
 
     if [[ -f "$BACKUP_PATH/application.tar.gz" ]]; then
@@ -46,6 +45,18 @@ restore_previous_release() {
             --exclude='public/' \
             --exclude='bootstrap/cache/' \
             "$rollback_dir/" "$APP_PATH/"
+    fi
+
+    if [[ -f "$BACKUP_PATH/public-assets.tar.gz" ]]; then
+        public_rollback="$BACKUP_PATH/public-assets"
+        mkdir -p "$public_rollback"
+        tar -xzf "$BACKUP_PATH/public-assets.tar.gz" -C "$public_rollback"
+        rsync -a --delete \
+            --exclude='index.php' \
+            --exclude='.htaccess' \
+            --exclude='storage' \
+            --exclude='build/' \
+            "$public_rollback/" "$WEB_PATH/"
     fi
 
     if [[ -d "$BACKUP_PATH/public-build" ]]; then
@@ -66,6 +77,7 @@ restore_previous_release() {
 trap restore_previous_release ERR
 
 log "Running deployment preflight checks."
+command -v flock >/dev/null
 command -v rsync >/dev/null
 command -v tar >/dev/null
 command -v curl >/dev/null
@@ -74,6 +86,7 @@ command -v curl >/dev/null
 [[ -d "$WEB_PATH" ]]
 require_file "$APP_PATH/.env"
 require_file "$APP_PATH/artisan"
+require_file "$WEB_PATH/index.php"
 require_file "$RELEASE_DIR/artisan"
 require_file "$RELEASE_DIR/vendor/autoload.php"
 require_file "$RELEASE_DIR/public/build/manifest.json"
@@ -87,6 +100,13 @@ tar -czf "$BACKUP_PATH/application.tar.gz" \
     --exclude='./public' \
     --exclude='./bootstrap/cache' \
     -C "$APP_PATH" .
+
+tar -czf "$BACKUP_PATH/public-assets.tar.gz" \
+    --exclude='./index.php' \
+    --exclude='./.htaccess' \
+    --exclude='./storage' \
+    --exclude='./build' \
+    -C "$WEB_PATH" .
 
 if [[ -d "$WEB_PATH/build" ]]; then
     cp -a "$WEB_PATH/build" "$BACKUP_PATH/public-build"
@@ -105,6 +125,14 @@ rsync -a --delete \
 
 mkdir -p "$APP_PATH/bootstrap/cache" "$APP_PATH/storage/framework/cache" "$APP_PATH/storage/framework/sessions" "$APP_PATH/storage/framework/views" "$APP_PATH/storage/logs"
 chmod -R ug+rwX "$APP_PATH/bootstrap/cache" "$APP_PATH/storage"
+
+log "Synchronizing non-entrypoint public assets."
+rsync -a --delete \
+    --exclude='index.php' \
+    --exclude='.htaccess' \
+    --exclude='storage' \
+    --exclude='build/' \
+    "$RELEASE_DIR/public/" "$WEB_PATH/"
 
 log "Preparing compiled public assets."
 rm -rf "$WEB_PATH/build.next"
