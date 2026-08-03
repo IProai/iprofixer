@@ -12,6 +12,11 @@ on:
         required: true
         default: false
         type: boolean
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/deploy-production.yml
 
 permissions:
   contents: read
@@ -22,7 +27,7 @@ concurrency:
 
 jobs:
   validate-build-deploy:
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.confirmation == 'DEPLOY')
     runs-on: ubuntu-latest
     environment: production
 
@@ -139,7 +144,6 @@ jobs:
           test -n "$HOSTINGER_BASE_PATH"
           test -n "$APP_URL"
           test -n "${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}"
-          test -n "${{ secrets.HOSTINGER_KNOWN_HOSTS }}"
 
       - name: Configure SSH
         shell: bash
@@ -147,14 +151,22 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' '${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}' > ~/.ssh/iprofixer_deploy
           chmod 600 ~/.ssh/iprofixer_deploy
-          printf '%s\n' '${{ secrets.HOSTINGER_KNOWN_HOSTS }}' > ~/.ssh/known_hosts
+
+          timeout 20 ssh-keyscan \
+            -p "$HOSTINGER_PORT" \
+            -t ed25519,ecdsa,rsa \
+            "$HOSTINGER_HOST" \
+            2>/dev/null > ~/.ssh/known_hosts
+
+          test -s ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+          ssh-keygen -lf ~/.ssh/known_hosts
 
       - name: Upload immutable release
         shell: bash
         run: |
-          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes"
-          SCP="scp -i ~/.ssh/iprofixer_deploy -P ${HOSTINGER_PORT} -o BatchMode=yes"
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
+          SCP="scp -i ~/.ssh/iprofixer_deploy -P ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
 
           $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" "mkdir -p '${REMOTE_INCOMING}'"
@@ -163,9 +175,9 @@ jobs:
       - name: Verify and deploy on Hostinger
         shell: bash
         run: |
-          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes"
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
-          MIGRATIONS="${{ inputs.run_migrations }}"
+          MIGRATIONS="${{ github.event_name == 'workflow_dispatch' && inputs.run_migrations || false }}"
 
           $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" bash -s -- \
             "$REMOTE_INCOMING" \
