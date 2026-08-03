@@ -31,28 +31,16 @@ Route::get('/results', [PublicContentController::class, 'page'])->defaults('page
 Route::get('/about', [PublicContentController::class, 'page'])->defaults('page', 'about')->name('about');
 Route::get('/resources', [PublicContentController::class, 'page'])->defaults('page', 'resources')->name('resources');
 Route::get('/contact', [PublicContentController::class, 'page'])->defaults('page', 'contact')->name('contact');
-// Client portal is deferred. Route intentionally disabled for V1.
 
 Route::get('/services/{service}', [PublicContentController::class, 'service'])
-    ->whereIn('service', [
-        'cutlery-restoration',
-        'hollowware-care',
-        'asset-condition-review',
-        'recurring-care-plans',
-    ])->name('services.show');
+    ->whereIn('service', ['cutlery-restoration', 'hollowware-care', 'asset-condition-review', 'recurring-care-plans'])
+    ->name('services.show');
 
 Route::get('/industries/{industry}', [PublicContentController::class, 'industry'])
-    ->whereIn('industry', [
-        'hotels-resorts',
-        'restaurants-groups',
-        'catering-events',
-        'procurement-operations',
-    ])->name('industries.show');
+    ->whereIn('industry', ['hotels-resorts', 'restaurants-groups', 'catering-events', 'procurement-operations'])
+    ->name('industries.show');
 
-Route::post('/rfq', RfqSubmissionController::class)
-    ->middleware('throttle:5,1')
-    ->name('rfq.store');
-
+Route::post('/rfq', RfqSubmissionController::class)->middleware('throttle:5,1')->name('rfq.store');
 Route::get('robots.txt', RobotsController::class)->name('robots');
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
 
@@ -83,37 +71,24 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::get('rfqs/report', RfqReportController::class)->name('rfqs.report');
     Route::get('rfqs', [RfqController::class, 'index'])->name('rfqs.index');
     Route::get('rfqs/{rfq}', [RfqController::class, 'show'])->name('rfqs.show');
-    Route::post(
-        'rfqs/{rfq}/notes',
-        [RfqController::class, 'storeNote'],
-    )->name('rfqs.notes.store');
-    Route::get('rfqs/{rfq}/attachments/{attachment}', [RfqController::class, 'downloadAttachment'])
-        ->name('rfqs.attachments.download');
+    Route::post('rfqs/{rfq}/notes', [RfqController::class, 'storeNote'])->name('rfqs.notes.store');
+    Route::get('rfqs/{rfq}/attachments/{attachment}', [RfqController::class, 'downloadAttachment'])->name('rfqs.attachments.download');
     Route::put('rfqs/{rfq}', [RfqController::class, 'update'])->name('rfqs.update');
-
-    // Commercial Workspace (CRM)
     Route::get('leads', [LeadController::class, 'index'])->name('leads.index');
     Route::get('leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
     Route::post('leads/{lead}/qualify', [LeadController::class, 'qualify'])->name('leads.qualify');
     Route::post('leads/{lead}/disqualify', [LeadController::class, 'disqualify'])->name('leads.disqualify');
     Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
-
     Route::get('opportunities', [OpportunityController::class, 'index'])->name('opportunities.index');
     Route::get('opportunities/{opportunity}', [OpportunityController::class, 'show'])->name('opportunities.show');
     Route::post('opportunities/{opportunity}/stage', [OpportunityController::class, 'updateStage'])->name('opportunities.stage');
-
     Route::get('organizations/check-duplicates', [OrganizationController::class, 'checkDuplicates'])->name('organizations.check-duplicates');
     Route::resource('organizations', OrganizationController::class)->only(['index', 'show', 'store']);
     Route::resource('contacts', ContactController::class)->only(['index', 'show', 'store']);
 });
 
 Route::get('/health', function (): JsonResponse {
-    return response()->json([
-        'status' => 'ok',
-        'service' => config('app.name', 'IProFixer'),
-        'environment' => app()->environment(),
-        'locale' => app()->getLocale(),
-    ]);
+    return response()->json(['status' => 'ok', 'service' => config('app.name', 'IProFixer'), 'environment' => app()->environment(), 'locale' => app()->getLocale()]);
 })->name('health');
 
 Route::get('/ready', function (): JsonResponse {
@@ -121,22 +96,24 @@ Route::get('/ready', function (): JsonResponse {
         DB::select('select 1');
     } catch (Throwable $exception) {
         report($exception);
-
-        return response()->json([
-            'status' => 'not_ready',
-            'database' => 'unavailable',
-        ], 503);
+        return response()->json(['status' => 'not_ready', 'database' => 'unavailable'], 503);
     }
-
-    return response()->json([
-        'status' => 'ready',
-        'database' => 'available',
-    ]);
+    return response()->json(['status' => 'ready', 'database' => 'available']);
 })->name('ready');
 
-Route::post('/locale/{locale}', function (string $locale): RedirectResponse {
+Route::match(['get', 'post'], '/locale/{locale}', function (string $locale): RedirectResponse {
     abort_unless(in_array($locale, ['en', 'ar'], true), 404);
     session(['locale' => $locale]);
+    cookie()->queue(cookie('iprofixer_locale', $locale, 60 * 24 * 365, '/', null, true, true, false, 'Lax'));
 
-    return back();
+    $previous = url()->previous();
+    $parts = parse_url($previous);
+    $path = $parts['path'] ?? '/';
+    $query = [];
+    if (isset($parts['query'])) {
+        parse_str($parts['query'], $query);
+    }
+    $query['lang'] = $locale;
+
+    return redirect($path.'?'.http_build_query($query));
 })->name('locale.update');
