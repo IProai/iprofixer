@@ -28,7 +28,7 @@ permissions:
 
 concurrency:
   group: iprofixer-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   validate-build-deploy:
