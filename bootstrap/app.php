@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleRedirectsMiddleware;
+use App\Http\Middleware\NormalizeArabicPublicCopy;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -25,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
         $middleware->append(HandleRedirectsMiddleware::class);
         $middleware->append(SecurityHeadersMiddleware::class);
-        $middleware->web(append: [SetLocale::class]);
+        $middleware->web(append: [SetLocale::class, NormalizeArabicPublicCopy::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Exception reporting and rendering policies are added by bounded packets.
