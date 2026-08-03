@@ -1,6 +1,6 @@
 name: Deploy production
 
-# Bounded retry trigger after normalizing and validating Hostinger SSH private key material.
+# Deploys the split Hostinger runtime and verifies that live HTML references the exact deployed Vite manifest.
 on:
   workflow_dispatch:
     inputs:
@@ -18,6 +18,7 @@ on:
       - main
     paths:
       - .github/workflows/deploy-production.yml
+      - deployment/hostinger/deploy.sh
 
 permissions:
   contents: read
