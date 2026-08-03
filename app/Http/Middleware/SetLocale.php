@@ -13,7 +13,17 @@ class SetLocale
 
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->session()->get('locale', config('app.locale', 'en'));
+        $requestedLocale = $request->query('lang');
+
+        if (is_string($requestedLocale) && in_array($requestedLocale, self::SUPPORTED_LOCALES, true)) {
+            $request->session()->put('locale', $requestedLocale);
+            cookie()->queue(cookie('iprofixer_locale', $requestedLocale, 60 * 24 * 365, '/', null, true, true, false, 'Lax'));
+        }
+
+        $locale = $request->session()->get(
+            'locale',
+            $request->cookie('iprofixer_locale', config('app.locale', 'en')),
+        );
 
         if (! in_array($locale, self::SUPPORTED_LOCALES, true)) {
             $locale = 'en';
@@ -21,6 +31,10 @@ class SetLocale
 
         App::setLocale($locale);
 
-        return $next($request);
+        $response = $next($request);
+        $response->headers->set('Vary', 'Cookie, Accept-Encoding');
+        $response->headers->set('Cache-Control', 'private, no-store, max-age=0');
+
+        return $response;
     }
 }
