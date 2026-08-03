@@ -1,6 +1,6 @@
 name: Deploy production
 
-# Deploys the split Hostinger runtime and verifies that live HTML references the exact deployed Vite manifest.
+# Deploys public experience changes and verifies the live Vite manifest.
 on:
   workflow_dispatch:
     inputs:
@@ -19,6 +19,9 @@ on:
     paths:
       - .github/workflows/deploy-production.yml
       - deployment/hostinger/deploy.sh
+      - resources/**
+      - app/Http/Middleware/**
+      - routes/**
 
 permissions:
   contents: read
@@ -153,13 +156,10 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
         run: |
           set -Eeuo pipefail
-
           install -m 700 -d ~/.ssh
           key_file=~/.ssh/iprofixer_deploy
           raw_key=~/.ssh/iprofixer_deploy.raw
-
           printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$raw_key"
-
           if grep -q -- '-----BEGIN .*PRIVATE KEY-----' "$raw_key"; then
             cat "$raw_key" > "$key_file"
             printf '\n' >> "$key_file"
@@ -172,25 +172,15 @@ jobs:
             mv "${key_file}.normalized" "$key_file"
             printf '\n' >> "$key_file"
           fi
-
           rm -f "$raw_key"
           chmod 600 "$key_file"
-
           if ! ssh-keygen -y -f "$key_file" >/dev/null 2>&1; then
             echo 'HOSTINGER_SSH_PRIVATE_KEY is not a valid unencrypted OpenSSH private key.' >&2
-            echo 'The GitHub secret must contain the private key, not the .pub file.' >&2
             exit 1
           fi
-
-          timeout 20 ssh-keyscan \
-            -p "$HOSTINGER_PORT" \
-            -t ed25519,ecdsa,rsa \
-            "$HOSTINGER_HOST" \
-            2>/dev/null > ~/.ssh/known_hosts
-
+          timeout 20 ssh-keyscan -p "$HOSTINGER_PORT" -t ed25519,ecdsa,rsa "$HOSTINGER_HOST" 2>/dev/null > ~/.ssh/known_hosts
           test -s ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-          ssh-keygen -lf ~/.ssh/known_hosts
 
       - name: Upload immutable release
         shell: bash
@@ -198,7 +188,6 @@ jobs:
           SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           SCP="scp -i ~/.ssh/iprofixer_deploy -P ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
-
           $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" "mkdir -p '${REMOTE_INCOMING}'"
           $SCP "iprofixer-${DEPLOY_SHA}.tar.gz" "iprofixer-${DEPLOY_SHA}.sha256" "${HOSTINGER_USER}@${HOSTINGER_HOST}:${REMOTE_INCOMING}/"
 
@@ -208,33 +197,21 @@ jobs:
           SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
           MIGRATIONS="${{ github.event_name == 'workflow_dispatch' && inputs.run_migrations || false }}"
-
-          $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" bash -s -- \
-            "$REMOTE_INCOMING" \
-            "$DEPLOY_SHA" \
-            "$MIGRATIONS" \
-            "$HOSTINGER_BASE_PATH" \
-            "$APP_URL" <<'REMOTE_SCRIPT'
+          $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" bash -s -- "$REMOTE_INCOMING" "$DEPLOY_SHA" "$MIGRATIONS" "$HOSTINGER_BASE_PATH" "$APP_URL" <<'REMOTE_SCRIPT'
           set -Eeuo pipefail
-
           incoming="$1"
           sha="$2"
           migrations="$3"
           base="$4"
           app_url="$5"
           release="$incoming/release"
-
           cd "$incoming"
           sha256sum -c "iprofixer-${sha}.sha256"
           rm -rf "$release"
           mkdir -p "$release"
           tar -xzf "iprofixer-${sha}.tar.gz" -C "$release"
           chmod +x "$release/deployment/hostinger/deploy.sh"
-
-          HOSTINGER_BASE_PATH="$base" \
-          HOSTINGER_PHP_BIN="/opt/alt/php84/usr/bin/php" \
-          APP_URL="$app_url" \
-            "$release/deployment/hostinger/deploy.sh" "$release" "$sha" "$migrations"
+          HOSTINGER_BASE_PATH="$base" HOSTINGER_PHP_BIN="/opt/alt/php84/usr/bin/php" APP_URL="$app_url" "$release/deployment/hostinger/deploy.sh" "$release" "$sha" "$migrations"
           REMOTE_SCRIPT
 
       - name: Publish release evidence
