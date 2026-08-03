@@ -1,4 +1,6 @@
 import './bootstrap';
+import '../css/experience.css';
+import './experience';
 
 const documentRoot = document.documentElement;
 const siteHeader = document.querySelector('.site-header');
