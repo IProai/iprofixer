@@ -1,5 +1,6 @@
 name: Deploy production
 
+# Bounded retry trigger after repairing Hostinger SSH host trust.
 on:
   workflow_dispatch:
     inputs:
