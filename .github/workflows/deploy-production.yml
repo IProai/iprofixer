@@ -1,6 +1,6 @@
 name: Deploy production
 
-# Bounded retry trigger after repairing Hostinger SSH host trust.
+# Bounded retry trigger after normalizing and validating Hostinger SSH private key material.
 on:
   workflow_dispatch:
     inputs:
@@ -148,10 +148,38 @@ jobs:
 
       - name: Configure SSH
         shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
         run: |
+          set -Eeuo pipefail
+
           install -m 700 -d ~/.ssh
-          printf '%s\n' '${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}' > ~/.ssh/iprofixer_deploy
-          chmod 600 ~/.ssh/iprofixer_deploy
+          key_file=~/.ssh/iprofixer_deploy
+          raw_key=~/.ssh/iprofixer_deploy.raw
+
+          printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$raw_key"
+
+          if grep -q -- '-----BEGIN .*PRIVATE KEY-----' "$raw_key"; then
+            cat "$raw_key" > "$key_file"
+            printf '\n' >> "$key_file"
+          else
+            if ! base64 --decode "$raw_key" > "$key_file" 2>/dev/null; then
+              echo 'HOSTINGER_SSH_PRIVATE_KEY is neither a raw private key nor valid base64 key material.' >&2
+              exit 1
+            fi
+            tr -d '\r' < "$key_file" > "${key_file}.normalized"
+            mv "${key_file}.normalized" "$key_file"
+            printf '\n' >> "$key_file"
+          fi
+
+          rm -f "$raw_key"
+          chmod 600 "$key_file"
+
+          if ! ssh-keygen -y -f "$key_file" >/dev/null 2>&1; then
+            echo 'HOSTINGER_SSH_PRIVATE_KEY is not a valid unencrypted OpenSSH private key.' >&2
+            echo 'The GitHub secret must contain the private key, not the .pub file.' >&2
+            exit 1
+          fi
 
           timeout 20 ssh-keyscan \
             -p "$HOSTINGER_PORT" \
