@@ -1,0 +1,81 @@
+name: Emergency recover production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/emergency-recover-production.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iprofixer-emergency-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+      HOSTINGER_BASE_PATH: ${{ secrets.HOSTINGER_BASE_PATH }}
+      APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+    steps:
+      - name: Configure SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          install -m 700 -d ~/.ssh
+          key_file=~/.ssh/iprofixer_deploy
+          raw_key=~/.ssh/iprofixer_deploy.raw
+          printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$raw_key"
+          if grep -q -- '-----BEGIN .*PRIVATE KEY-----' "$raw_key"; then
+            cat "$raw_key" > "$key_file"
+            printf '\n' >> "$key_file"
+          else
+            base64 --decode "$raw_key" > "$key_file"
+            tr -d '\r' < "$key_file" > "${key_file}.normalized"
+            mv "${key_file}.normalized" "$key_file"
+            printf '\n' >> "$key_file"
+          fi
+          rm -f "$raw_key"
+          chmod 600 "$key_file"
+          ssh-keygen -y -f "$key_file" >/dev/null
+          timeout 20 ssh-keyscan -p "$HOSTINGER_PORT" -t ed25519,ecdsa,rsa "$HOSTINGER_HOST" 2>/dev/null > ~/.ssh/known_hosts
+          test -s ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Force application online
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
+          $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" bash -s -- "$HOSTINGER_BASE_PATH" <<'REMOTE'
+          set -Eeuo pipefail
+          base="$1"
+          app="$base/iprofixer_app"
+          php_bin="/opt/alt/php84/usr/bin/php"
+          test -f "$app/artisan"
+          rm -f "$app/storage/framework/maintenance.php"
+          "$php_bin" "$app/artisan" up || true
+          "$php_bin" "$app/artisan" optimize:clear || true
+          "$php_bin" "$app/artisan" config:cache || true
+          "$php_bin" "$app/artisan" route:cache || true
+          "$php_bin" "$app/artisan" view:cache || true
+          "$php_bin" "$app/artisan" up || true
+          REMOTE
+
+      - name: Verify live service
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --max-time 20 "$APP_URL/health"
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --max-time 20 "$APP_URL/ready"
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --max-time 30 "$APP_URL/" >/dev/null
