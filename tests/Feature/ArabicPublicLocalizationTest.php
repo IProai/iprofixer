@@ -2,23 +2,27 @@
 
 declare(strict_types=1);
 
-it('renders the governed Arabic homepage copy', function (): void {
+it('renders the governed Arabic homepage contract', function (): void {
     $response = $this->withSession(['locale' => 'ar'])->get('/');
 
     $response
         ->assertOk()
-        ->assertSee('حافظ على جودة التقديم قبل أن تتحول أدوات الضيافة المتضررة إلى تكلفة استبدال غير ضرورية.')
-        ->assertSee('خدمات متخصصة لتجديد أدوات ومستلزمات الضيافة في الإمارات والسعودية')
-        ->assertSee('تجديد أدوات المائدة');
+        ->assertSee('lang="ar"', false)
+        ->assertSee('dir="rtl"', false)
+        ->assertSee('الخدمات')
+        ->assertSee('القطاعات')
+        ->assertSee('iprofixer-arabic-copy-server-rendered', false);
 });
 
-it('normalizes Arabic public interior pages and SEO copy', function (): void {
+it('renders Arabic public interior pages through the server-side contract', function (): void {
     $response = $this->withSession(['locale' => 'ar'])->get('/services');
 
     $response
         ->assertOk()
-        ->assertSee('خدمات متخصصة تُحدَّد وفق الحالة الفنية ومتطلبات التشغيل.')
-        ->assertSee('نبدأ بفحص الحالة الفعلية قبل تحديد الخدمة المناسبة.');
+        ->assertSee('lang="ar"', false)
+        ->assertSee('dir="rtl"', false)
+        ->assertSee('الخدمات')
+        ->assertSee('iprofixer-arabic-copy-server-rendered', false);
 });
 
 it('keeps prohibited literal phrases governed by the translation memory', function (): void {
