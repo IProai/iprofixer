@@ -49,6 +49,7 @@ final class NormalizeArabicPublicCopy
             $content = str_replace(array_keys($phrases), array_values($phrases), $content);
         }
 
+        // Durable release marker used by automated and live Arabic verification.
         $content = str_replace(
             '</body>',
             '<!-- iprofixer-arabic-copy-server-rendered --></body>',
