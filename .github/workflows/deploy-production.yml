@@ -164,15 +164,29 @@ jobs:
           rm -f "$raw_key"
           chmod 600 "$key_file"
           ssh-keygen -y -f "$key_file" >/dev/null
-          timeout 20 ssh-keyscan -p "$HOSTINGER_PORT" -t ed25519,ecdsa,rsa "$HOSTINGER_HOST" 2>/dev/null > ~/.ssh/known_hosts
+
+          clean_host="$(printf '%s' "$HOSTINGER_HOST" | tr -d '\r\n[:space:]' | sed -E 's#^[a-zA-Z]+://##; s#/.*$##; s/:([0-9]+)$//')"
+          clean_port="$(printf '%s' "$HOSTINGER_PORT" | tr -cd '0-9')"
+          test -n "$clean_host"
+          test -n "$clean_port"
+          printf 'HOSTINGER_HOST=%s\nHOSTINGER_PORT=%s\n' "$clean_host" "$clean_port" >> "$GITHUB_ENV"
+
+          : > ~/.ssh/known_hosts
+          for attempt in 1 2 3; do
+            if timeout 20 ssh-keyscan -p "$clean_port" "$clean_host" 2>/dev/null >> ~/.ssh/known_hosts && test -s ~/.ssh/known_hosts; then
+              break
+            fi
+            sleep $((attempt * 2))
+          done
+          sort -u ~/.ssh/known_hosts -o ~/.ssh/known_hosts
           test -s ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Upload immutable release
         shell: bash
         run: |
-          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
-          SCP="scp -i ~/.ssh/iprofixer_deploy -P ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
+          SCP="scp -i ~/.ssh/iprofixer_deploy -P ${HOSTINGER_PORT} -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
           $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" "mkdir -p '${REMOTE_INCOMING}'"
           $SCP "iprofixer-${DEPLOY_SHA}.tar.gz" "iprofixer-${DEPLOY_SHA}.sha256" "${HOSTINGER_USER}@${HOSTINGER_HOST}:${REMOTE_INCOMING}/"
@@ -180,7 +194,7 @@ jobs:
       - name: Verify and deploy on Hostinger
         shell: bash
         run: |
-          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
+          SSH="ssh -i ~/.ssh/iprofixer_deploy -p ${HOSTINGER_PORT} -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts"
           REMOTE_INCOMING="${HOSTINGER_BASE_PATH}/.deploy/incoming/${DEPLOY_SHA}"
           MIGRATIONS="${{ github.event_name == 'workflow_dispatch' && inputs.run_migrations || false }}"
           $SSH "${HOSTINGER_USER}@${HOSTINGER_HOST}" bash -s -- "$REMOTE_INCOMING" "$DEPLOY_SHA" "$MIGRATIONS" "$HOSTINGER_BASE_PATH" "$APP_URL" <<'REMOTE_SCRIPT'
