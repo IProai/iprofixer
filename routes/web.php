@@ -61,7 +61,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function (): v
     Route::delete('navigation/items/{item}', [NavigationController::class, 'destroyItem'])->name('navigation.items.destroy');
     Route::get('redirects', [RedirectController::class, 'index'])->name('redirects.index');
     Route::post('redirects', [RedirectController::class, 'store'])->name('redirects.store');
-    Route::get('redirects/{redirect}/edit', [RedirectController::class, 'editItem'])->name('redirects.edit');
+    Route::get('redirects/{redirect}/edit', [RedirectController::class, 'edit'])->name('redirects.edit');
     Route::put('redirects/{redirect}', [RedirectController::class, 'update'])->name('redirects.update');
     Route::post('redirects/{redirect}/toggle', [RedirectController::class, 'toggle'])->name('redirects.toggle');
     Route::delete('redirects/{redirect}', [RedirectController::class, 'destroy'])->name('redirects.destroy');
