@@ -40,8 +40,10 @@ it('switches the public website to Arabic with right-to-left output', function (
 
     $this->get('/')
         ->assertOk()
+        ->assertSee('lang="ar"', false)
         ->assertSee('dir="rtl"', false)
-        ->assertSee('احمِ جودة الخدمة');
+        ->assertSee('الخدمات')
+        ->assertSee('iprofixer-arabic-copy-server-rendered', false);
 });
 
 it('rejects unsupported public detail slugs', function (): void {
