@@ -96,8 +96,10 @@ Route::get('/ready', function (): JsonResponse {
         DB::select('select 1');
     } catch (Throwable $exception) {
         report($exception);
+
         return response()->json(['status' => 'not_ready', 'database' => 'unavailable'], 503);
     }
+
     return response()->json(['status' => 'ready', 'database' => 'available']);
 })->name('ready');
 
@@ -110,9 +112,11 @@ Route::match(['get', 'post'], '/locale/{locale}', function (string $locale): Red
     $parts = parse_url($previous);
     $path = $parts['path'] ?? '/';
     $query = [];
+
     if (isset($parts['query'])) {
         parse_str($parts['query'], $query);
     }
+
     $query['lang'] = $locale;
 
     return redirect($path.'?'.http_build_query($query));
