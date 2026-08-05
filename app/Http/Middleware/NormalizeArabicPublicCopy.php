@@ -51,7 +51,7 @@ final class NormalizeArabicPublicCopy
 
         $content = str_replace(
             '</body>',
-            "<!-- iprofixer-arabic-copy-server-rendered --></body>",
+            '<!-- iprofixer-arabic-copy-server-rendered --></body>',
             $content,
         );
 
