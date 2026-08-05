@@ -18,7 +18,6 @@ final class NormalizeArabicPublicCopy
             app()->getLocale() !== 'ar'
             || $request->is('admin/*')
             || $request->is('login')
-            || ! str_contains((string) $response->headers->get('Content-Type'), 'text/html')
         ) {
             return $response;
         }
@@ -26,6 +25,15 @@ final class NormalizeArabicPublicCopy
         $content = $response->getContent();
 
         if (! is_string($content) || $content === '') {
+            return $response;
+        }
+
+        $contentType = (string) $response->headers->get('Content-Type');
+        $isHtml = str_contains($contentType, 'text/html')
+            || str_starts_with(ltrim($content), '<!doctype html')
+            || str_starts_with(ltrim($content), '<html');
+
+        if (! $isHtml) {
             return $response;
         }
 
@@ -39,9 +47,16 @@ final class NormalizeArabicPublicCopy
             );
 
             $content = str_replace(array_keys($phrases), array_values($phrases), $content);
-            $response->setContent($content);
-            $response->headers->remove('Content-Length');
         }
+
+        $content = str_replace(
+            '</body>',
+            "<!-- iprofixer-arabic-copy-server-rendered --></body>",
+            $content,
+        );
+
+        $response->setContent($content);
+        $response->headers->remove('Content-Length');
 
         return $response;
     }
