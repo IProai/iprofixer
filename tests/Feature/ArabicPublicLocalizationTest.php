@@ -32,13 +32,13 @@ it('keeps prohibited literal phrases governed by the translation memory', functi
         ->toBe('تجديد أواني وقطع التقديم المعدنية');
 });
 
-it('ships a browser normalizer for Arabic content created by interactive components', function (): void {
+it('uses lightweight server-rendered Arabic normalization without a DOM observer', function (): void {
     $response = $this->withSession(['locale' => 'ar'])->get('/');
 
     $response
         ->assertOk()
-        ->assertSee('iprofixer-arabic-copy-normalizer', false)
-        ->assertSee('MutationObserver', false)
+        ->assertSee('iprofixer-arabic-copy-server-rendered', false)
+        ->assertDontSee('MutationObserver', false)
         ->assertSee('قبل المعالجة');
 });
 
@@ -47,6 +47,6 @@ it('does not apply the Arabic public-copy normalizer to English pages', function
 
     $response
         ->assertOk()
-        ->assertDontSee('iprofixer-arabic-copy-normalizer', false)
+        ->assertDontSee('iprofixer-arabic-copy-server-rendered', false)
         ->assertSee('Protect presentation quality before tired assets become an operating cost.');
 });
