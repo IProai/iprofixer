@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 520">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#081525"/><stop offset="1" stop-color="#17283b"/></linearGradient>
+  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6f7a84"/><stop offset=".18" stop-color="#f8fbfd"/><stop offset=".42" stop-color="#9ea8b1"/><stop offset=".68" stop-color="#fff"/><stop offset="1" stop-color="#68727b"/></linearGradient>
+  <radialGradient id="shine"><stop stop-color="#fff"/><stop offset=".55" stop-color="#d9e0e5"/><stop offset="1" stop-color="#87929b"/></radialGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".45"/></filter>
+</defs>
+<rect width="1440" height="520" fill="url(#bg)"/>
+<path d="M0 430C340 335 720 495 1440 315V520H0Z" fill="#0f2031" opacity=".75"/>
+<g filter="url(#shadow)" transform="rotate(-8 980 270)">
+  <g transform="translate(540 40)">
+    <rect x="115" y="165" width="52" height="330" rx="24" fill="url(#steel)"/>
+    <path d="M108 170V22h16v133h18V10h16v145h18V22h16v148c0 48-84 48-84 0Z" fill="url(#steel)"/>
+  </g>
+  <g transform="translate(760 0)">
+    <ellipse cx="135" cy="112" rx="95" ry="122" fill="url(#shine)"/>
+    <ellipse cx="135" cy="112" rx="63" ry="88" fill="#eef3f6" opacity=".34"/>
+    <rect x="108" y="198" width="54" height="300" rx="25" fill="url(#steel)"/>
+  </g>
+  <g transform="translate(1000 25)">
+    <path d="M45 0h92c25 0 43 20 40 45l-28 210H70L45 0Z" fill="url(#steel)"/>
+    <rect x="76" y="230" width="58" height="270" rx="26" fill="url(#steel)"/>
+  </g>
+  <g transform="translate(1220 35)">
+    <path d="M30 0h58c18 0 32 16 29 34L88 265H44L30 0Z" fill="url(#steel)"/>
+    <rect x="44" y="245" width="48" height="250" rx="24" fill="url(#steel)"/>
+  </g>
+</g>
+<g opacity=".22" fill="none" stroke="#fff">
+  <circle cx="1040" cy="185" r="170"/><circle cx="1040" cy="185" r="210"/>
+</g>
+</svg>
