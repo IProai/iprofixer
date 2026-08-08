@@ -4,9 +4,9 @@ const main = document.querySelector('main#main');
 const compact = window.matchMedia('(max-width: 700px)').matches;
 
 const media = {
-  hero: '/media/hero-cutlery.svg',
+  hero: '/media/hero-cutlery.webp',
   cutlery: '/media/service-cutlery.svg',
-  hollowware: '/media/service-hollowware.svg',
+  hollowware: '/media/service-hollowware.webp',
   assessment: '/media/service-assessment.svg',
   recurring: '/media/service-recurring.svg',
   before: '/media/before-cutlery.svg',
